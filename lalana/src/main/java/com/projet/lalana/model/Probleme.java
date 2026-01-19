@@ -16,7 +16,7 @@ public class Probleme {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "signalement_id")
     private Signalement signalement;
 
@@ -26,7 +26,7 @@ public class Probleme {
     @Column(nullable = false)
     private Double budgetEstime;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "entreprise_id")
     private Entreprise entreprise;
 }

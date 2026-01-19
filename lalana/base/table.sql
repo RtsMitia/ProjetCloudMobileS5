@@ -12,6 +12,13 @@ CREATE TABLE users (
     role INTEGER NOT NULL 
 );
 
+CREATE TABLE users_history (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status INTEGER NOT NULL
+);
+
 CREATE TABLE signalement(
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id),
