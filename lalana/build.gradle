@@ -7,7 +7,7 @@ plugins {
 
 group = 'com.projet'
 version = '0.0.1-SNAPSHOT'
-description = 'Gestion d'etat des routes de Tana'
+description = "Gestion d'etat des routes de Tana"
 
 java {
 	toolchain {
