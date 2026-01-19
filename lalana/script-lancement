@@ -1,0 +1,7 @@
+Pour lancer le projet
+    docker run -p 8080:8080 --name lalana-container lalana-app
+
+Pour consulter la base 
+    docker exec -it postgres-db psql -U myuser -d lalana_db
+
+
