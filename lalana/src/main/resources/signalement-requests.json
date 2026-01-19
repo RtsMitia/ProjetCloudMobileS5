@@ -1,0 +1,44 @@
+{
+    "signalement_problemes" : [
+  {
+    "userId": 2,
+    "x": 18.8792,
+    "y": -13.5172,
+    "localisation": "Avenue Independence",
+    "description": "Nid de poule important sur la chaussée",
+    "createdAt": "2026-01-10"
+  },
+  {
+    "userId": 2,
+    "x": 18.8888,
+    "y": -13.5000,
+    "localisation": "Rue des Fleurs",
+    "description": "Eclairage public en panne",
+    "createdAt": "2026-01-12"
+  },
+  {
+    "userId": 3,
+    "x": 18.8700,
+    "y": -13.5200,
+    "localisation": "Pont Anosibe",
+    "description": "Arbre tombé bloquant la route",
+    "createdAt": "2026-01-15"
+  },
+  {
+    "userId": 4,
+    "x": 18.8600,
+    "y": -13.5100,
+    "localisation": "Boulevard de la Liberté",
+    "description": "Fuite d'eau importante",
+    "createdAt": "2026-01-16"
+  },
+  {
+    "userId": 5,
+    "x": 18.8950,
+    "y": -13.5050,
+    "localisation": "Quartier Analakely",
+    "description": "Débris sur la chaussée après orage",
+    "createdAt": "2026-01-18"
+  }
+    ]
+}
