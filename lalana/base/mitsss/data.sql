@@ -35,7 +35,6 @@ INSERT INTO signalement (id, user_id, point_id, description, created_at, status_
 INSERT INTO probleme (id, signalement_id, surface, budget_estime, entreprise_id) VALUES
 (1, 1, 12.50, 1500.00, 1);
 
--- History entries
 INSERT INTO signalement_history (id, signalement_id, status_id, changed_at) VALUES
 (1, 1, 1, '2026-01-10 09:35:00'),
 (2, 2, 2, '2026-01-12 21:00:00');
@@ -43,5 +42,26 @@ INSERT INTO signalement_history (id, signalement_id, status_id, changed_at) VALU
 INSERT INTO probleme_history (id, probleme_id, status_id, changed_at) VALUES
 (1, 1, 1, '2026-01-11 08:00:00');
 
--- End of test data for mitsss
+
+
+-- Additional rows to test Firestore sync (explicitly unsynced)
+INSERT INTO points (id, x, y, localisation, firestore_synced) VALUES
+(3, 18.8900, -13.4800, 'Boulevard Test A', FALSE),
+(4, 18.8950, -13.4900, 'Avenue Test B', FALSE);
+
+INSERT INTO signalement_status (id, nom, description, firestore_synced) VALUES
+(4, 'TestSync', 'Status used to test Firestore sync', FALSE);
+
+INSERT INTO signalement (id, user_id, point_id, description, created_at, status_id, firestore_synced) VALUES
+(3, 1, 3, 'Test signalement sync 1', '2026-01-20 10:00:00', 4, FALSE),
+(4, 1, 4, 'Test signalement sync 2', '2026-01-21 11:00:00', 1, FALSE);
+
+-- Probleme statuses to test Firestore sync
+INSERT INTO probleme_status (id, nom, description, valeur, firestore_synced) VALUES
+(4, 'TestProblemeStatus', 'Probleme status used to test Firestore sync', 40, FALSE);
+
+-- Problemes to test Firestore sync (link to signalements)
+INSERT INTO probleme (id, signalement_id, surface, budget_estime, entreprise_id, firestore_synced) VALUES
+(2, 3, 5.25, 500.00, 1, FALSE),
+(3, 4, 8.75, 900.00, 1, FALSE);
 

@@ -4,4 +4,5 @@ import com.projet.lalana.model.Signalement;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SignalementRepository extends JpaRepository<Signalement, Integer> {
+	java.util.List<Signalement> findByFirestoreSyncedFalse();
 }

@@ -33,4 +33,7 @@ public class Probleme {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id")
     private ProblemeStatus problemeStatus;
+
+    @Column(name = "firestore_synced", nullable = false)
+    private Boolean firestoreSynced = false;
 }

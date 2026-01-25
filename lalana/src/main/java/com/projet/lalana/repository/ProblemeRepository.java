@@ -15,4 +15,5 @@ public interface ProblemeRepository extends JpaRepository<Probleme, Integer> {
             WHERE p.problemeStatus.valeur <= :valeur
             """)
         List<Probleme> findByValeur(Integer valeur);
+    java.util.List<Probleme> findByFirestoreSyncedFalse();
 }

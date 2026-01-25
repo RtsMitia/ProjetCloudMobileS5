@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface ProblemeStatusRepository extends JpaRepository<ProblemeStatus, Integer> {
 	Optional<ProblemeStatus> findByValeur(Integer valeur);
+    java.util.List<ProblemeStatus> findByFirestoreSyncedFalse();
 }

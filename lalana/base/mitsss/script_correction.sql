@@ -5,7 +5,8 @@ CREATE TABLE points (
     id SERIAL PRIMARY KEY,
     x FLOAT NOT NULL,
     y FLOAT NOT NULL,
-    localisation VARCHAR(255) NOT NULL
+    localisation VARCHAR(255) NOT NULL,
+    firestore_synced BOOLEAN DEFAULT FALSE
 );
 
 -- =====================
@@ -34,6 +35,7 @@ CREATE TABLE signalement_status (
     id SERIAL PRIMARY KEY,
     nom VARCHAR(50) NOT NULL,
     description TEXT
+    ,firestore_synced BOOLEAN DEFAULT FALSE
 );
 
 -- =====================
@@ -45,7 +47,8 @@ CREATE TABLE signalement (
     point_id INT REFERENCES points(id),
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status_id INT REFERENCES signalement_status(id)
+    status_id INT REFERENCES signalement_status(id),
+    firestore_synced BOOLEAN DEFAULT FALSE
 );
 
 -- =====================
@@ -75,7 +78,8 @@ CREATE TABLE probleme_status (
     id SERIAL PRIMARY KEY,
     nom VARCHAR(50) NOT NULL,
     description TEXT,
-    valeur INTEGER NOT NULL
+    valeur INTEGER NOT NULL,
+    ,firestore_synced BOOLEAN DEFAULT FALSE
 );
 
 -- =====================
@@ -86,7 +90,8 @@ CREATE TABLE probleme (
     signalement_id INT REFERENCES signalement(id),
     surface NUMERIC(10,2) NOT NULL,
     budget_estime NUMERIC(15,2) NOT NULL,
-    entreprise_id INT REFERENCES entreprise(id)
+    entreprise_id INT REFERENCES entreprise(id),
+    ,firestore_synced BOOLEAN DEFAULT FALSE
 );
 
 -- =====================
