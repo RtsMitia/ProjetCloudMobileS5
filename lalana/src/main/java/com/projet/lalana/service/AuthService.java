@@ -18,6 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.UserRecord;
+import com.google.firebase.auth.UserRecord.CreateRequest;
 
 @Service
 public class AuthService {
@@ -66,6 +69,58 @@ public class AuthService {
             Map<String, Object> err = new HashMap<>();
             err.put("status", e.getStatusCode() != null ? e.getStatusCode().value() : HttpStatus.BAD_REQUEST.value());
             err.put("error", e.getResponseBodyAsString());
+            return err;
+        }
+    }
+
+    /**
+     * Create user in Firebase and in local DB. If local DB save fails, attempts to rollback Firebase user deletion.
+     * Returns a map: on success contains `firebase` (firebase response) and `local` (local user info).
+     * On Firebase or local failure returns a map with `status` and `error` or descriptive error.
+     */
+    public Map<String, Object> createUser(String email, String password) {
+        try {
+            // Create user in Firebase via Admin SDK
+                CreateRequest req = new CreateRequest()
+                    .setEmail(email)
+                    .setPassword(password);
+
+            UserRecord userRecord = FirebaseAuth.getInstance().createUser(req);
+            String uid = userRecord.getUid();
+
+            try {
+                User user = new User();
+                user.setEmail(email);
+                user.setPassword(password);
+                User saved = userRepository.save(user);
+
+                Map<String, Object> out = new HashMap<>();
+                Map<String, Object> firebase = new HashMap<>();
+                firebase.put("uid", uid);
+                firebase.put("email", userRecord.getEmail());
+                out.put("firebase", firebase);
+                Map<String, Object> local = new HashMap<>();
+                local.put("id", saved.getId());
+                local.put("email", saved.getEmail());
+                out.put("local", local);
+                return out;
+            } catch (Exception e) {
+                // rollback firebase user
+                try {
+                    FirebaseAuth.getInstance().deleteUser(uid);
+                } catch (Exception ex) {
+                    System.out.println("Failed to rollback Firebase user uid=" + uid + " : " + ex.getMessage());
+                }
+
+                Map<String, Object> err = new HashMap<>();
+                err.put("status", 500);
+                err.put("error", "Erreur lors de la création locale de l'utilisateur: " + e.getMessage());
+                return err;
+            }
+        } catch (Exception e) {
+            Map<String, Object> err = new HashMap<>();
+            err.put("status", 400);
+            err.put("error", "Firebase create user failed: " + e.getMessage());
             return err;
         }
     }

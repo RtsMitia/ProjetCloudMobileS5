@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,6 +64,20 @@ public class ProblemeController {
         } catch (Exception e) {
             logger.error("Erreur getProblemesValeur10", e);
             return new ApiResponse(false, "Erreur serveur lors de la récupération des problèmes", null);
+        }
+    }
+
+    @PostMapping("/{id}/resolve")
+    public ApiResponse resolveProbleme(@PathVariable Integer id) {
+        try {
+            Probleme updated = problemeService.markResolved(id);
+            return new ApiResponse(true, "Problème marqué comme résolu", ProblemeDto.fromEntity(updated));
+        } catch (ServiceException se) {
+            logger.error("ServiceException resolveProbleme id={}", id, se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error resolveProbleme id={}", id, e);
+            return new ApiResponse(false, "Erreur serveur lors du changement de statut du problème", null);
         }
     }
 }

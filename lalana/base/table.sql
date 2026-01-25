@@ -61,7 +61,8 @@ CREATE TABLE probleme (
     signalement_id INT REFERENCES signalement(id),
     surface NUMERIC(10,2) NOT NULL,
     budget_estime NUMERIC(15,2) NOT NULL,
-    entreprise_id INT REFERENCES entreprise(id)
+    entreprise_id INT REFERENCES entreprise(id),
+    status_id INT REFERENCES probleme_status(id)
 );
 
 

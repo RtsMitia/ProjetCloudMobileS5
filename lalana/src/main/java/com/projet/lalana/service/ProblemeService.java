@@ -2,6 +2,10 @@ package com.projet.lalana.service;
 
 import com.projet.lalana.model.Probleme;
 import com.projet.lalana.repository.ProblemeRepository;
+import com.projet.lalana.model.ProblemeStatus;
+import com.projet.lalana.repository.ProblemeStatusRepository;
+import jakarta.transaction.Transactional;
+import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +21,7 @@ public class ProblemeService {
     private static final Logger logger = LoggerFactory.getLogger(ProblemeService.class);
 
     private final ProblemeRepository problemeRepository;
+    private final ProblemeStatusRepository problemeStatusRepository;
 
     public List<Probleme> getAll() {
         try {
@@ -42,6 +47,25 @@ public class ProblemeService {
         } catch (Exception e) {
             logger.error("Erreur lors de findByValeur valeur={}", valeur, e);
             throw new ServiceException("Erreur lors de la récupération des problèmes par valeur", e);
+        }
+    }
+
+    @Transactional
+    public Probleme markResolved(Integer id) {
+        try {
+            Probleme p = problemeRepository.findById(id)
+                    .orElseThrow(() -> new ServiceException("Problème non trouvé id=" + id));
+
+            ProblemeStatus resolved = problemeStatusRepository.findByValeur(30)
+                    .orElseThrow(() -> new ServiceException("Status 'resolu' (valeur=30) introuvable"));
+
+            p.setProblemeStatus(resolved);
+            return problemeRepository.save(p);
+        } catch (ServiceException se) {
+            throw se;
+        } catch (Exception e) {
+            logger.error("Erreur lors de markResolved probleme id={}", id, e);
+            throw new ServiceException("Erreur lors du changement de statut du problème", e);
         }
     }
 
