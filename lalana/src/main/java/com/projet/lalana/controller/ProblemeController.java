@@ -3,6 +3,7 @@ package com.projet.lalana.controller;
 import com.projet.lalana.response.ApiResponse;
 import com.projet.lalana.service.ProblemeService;
 import com.projet.lalana.service.ServiceException;
+import com.projet.lalana.dto.ProblemeDto;
 import com.projet.lalana.model.Probleme;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -49,6 +51,18 @@ public class ProblemeController {
         } catch (Exception e) {
             logger.error("Unexpected error getById probleme id={}", id, e);
             return new ApiResponse(false, "Erreur serveur lors de la récupération du problème", null);
+        }
+    }
+
+    @GetMapping("/valeur/10")
+    public ApiResponse getProblemesValeur10() {
+        try {
+            List<Probleme> list = problemeService.findByValeur(10);
+            List<ProblemeDto> out = list.stream().map(ProblemeDto::fromEntity).toList();
+            return new ApiResponse(true, "OK", out);
+        } catch (Exception e) {
+            logger.error("Erreur getProblemesValeur10", e);
+            return new ApiResponse(false, "Erreur serveur lors de la récupération des problèmes", null);
         }
     }
 }

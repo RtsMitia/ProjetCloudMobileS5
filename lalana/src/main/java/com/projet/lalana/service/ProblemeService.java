@@ -35,4 +35,15 @@ public class ProblemeService {
             throw new ServiceException("Erreur lors de la récupération du problème id=" + id, e);
         }
     }
+
+    public List<Probleme> findByValeur(Integer valeur) {
+        try {
+            return problemeRepository.findByValeur(valeur);
+        } catch (Exception e) {
+            logger.error("Erreur lors de findByValeur valeur={}", valeur, e);
+            throw new ServiceException("Erreur lors de la récupération des problèmes par valeur", e);
+        }
+    }
+
+    
 }
