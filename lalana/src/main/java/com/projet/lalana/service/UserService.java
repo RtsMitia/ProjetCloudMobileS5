@@ -4,6 +4,12 @@ import com.google.firebase.auth.ExportedUserRecord;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.ListUsersPage;
 import com.google.firebase.auth.UserRecord.UpdateRequest;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.auth.oauth2.GoogleCredentials;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import com.projet.lalana.model.User;
 import com.projet.lalana.model.UserHistory;
 import com.projet.lalana.repository.UserHistoryRepository;
@@ -28,6 +34,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserHistoryRepository userHistoryRepository;
     private final AuthService authService;
+    private final FirebaseService firebaseService;
 
     public UserHistory deblockUser(Integer userId, String note) {
         try {
@@ -39,7 +46,7 @@ public class UserService {
 
             UserHistory history = new UserHistory();
             history.setUser(user);
-            history.setDescription(note != null && !note.isEmpty() ? note : "Débloqué");
+            
             history.setChangedAt(LocalDateTime.now());
             history.setStatus(1); 
 
@@ -63,7 +70,10 @@ public class UserService {
 
         List<ExportedUserRecord> users = new ArrayList<>();
 
-        ListUsersPage page = FirebaseAuth.getInstance().listUsers(null);
+    // Ensure FirebaseApp is initialized
+    firebaseService.ensureInitialized();
+
+    ListUsersPage page = firebaseService.getAuth().listUsers(null);
         while (page != null) {
             for (ExportedUserRecord user : page.getValues()) {
                 users.add(user);
@@ -120,7 +130,6 @@ public class UserService {
                     if (lastStatus != BLOCKED_STATUS) {
                         UserHistory history = new UserHistory();
                         history.setUser(user);
-                        history.setDescription("Bloqué (synchronisation Firebase)");
                         history.setChangedAt(LocalDateTime.now());
                         history.setStatus(BLOCKED_STATUS);
 
@@ -145,6 +154,9 @@ public class UserService {
     @Transactional
     public List<User> syncUnblockedUserToFirebase() {
         try {
+            // Ensure FirebaseApp is initialized
+            firebaseService.ensureInitialized();
+
             List<User> allUsers = userRepository.findAll();
             List<User> synced = new ArrayList<>();
 
@@ -161,7 +173,7 @@ public class UserService {
                     final int UNBLOCKED_STATUS = 1;
                     if (currentStatus == UNBLOCKED_STATUS) {
                         try {
-                            FirebaseAuth.getInstance().updateUser(
+                            firebaseService.getAuth().updateUser(
                                 new UpdateRequest(user.getFirebaseToken())
                                     .setDisabled(false)
                             );
@@ -182,5 +194,8 @@ public class UserService {
             throw new ServiceException("Erreur lors de la synchronisation vers Firebase", e);
         }
     }
+
+
+    // Firebase initialization moved to FirebaseService
 
 }

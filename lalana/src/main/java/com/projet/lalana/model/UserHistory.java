@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_history")
+@Table(name = "users_history")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,9 +21,6 @@ public class UserHistory {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
-
-    @Column(columnDefinition = "TEXT")
-    private String description;
 
     private LocalDateTime changedAt;
 
