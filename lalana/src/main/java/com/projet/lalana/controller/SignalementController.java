@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -49,6 +50,20 @@ public class SignalementController {
         } catch (Exception e) {
             logger.error("Unexpected error getById id={}", id, e);
             return new ApiResponse(false, "Erreur serveur lors de la récupération du signalement", null);
+        }
+    }
+
+    @GetMapping("/sync")
+    public ApiResponse synchronise() {
+        try {
+            int imported = signalementService.synchronisation();
+            return new ApiResponse(true, "Synchronisation terminée", imported);
+        } catch (ServiceException se) {
+            logger.error("ServiceException synchronisation", se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error synchronisation", e);
+            return new ApiResponse(false, "Erreur serveur lors de la synchronisation", null);
         }
     }
 }
