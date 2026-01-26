@@ -26,4 +26,7 @@ public class UserHistory {
     private String description;
 
     private LocalDateTime changedAt;
+
+    @Column(nullable = false)
+    private Integer status;
 }
