@@ -34,4 +34,7 @@ public class Signalement {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id")
     private SignalementStatus status;
+
+    @Column(name = "firestore_synced", nullable = false)
+    private Boolean firestoreSynced = false;
 }

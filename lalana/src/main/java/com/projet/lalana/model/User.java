@@ -21,9 +21,4 @@ public class User {
 
     @Column(length = 255, nullable = false)
     private String password;
-
-    @Column(nullable = false)
-    private Integer role;
-
-    
 }
