@@ -37,3 +37,4 @@ out/
 .vscode/
 
 firebase-key.json
+application.properties
