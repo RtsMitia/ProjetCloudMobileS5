@@ -1,4 +1,4 @@
-package com.projet.lalana;
+ package com.projet.lalana;
 
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
