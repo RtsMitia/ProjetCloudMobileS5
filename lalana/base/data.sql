@@ -1,10 +1,10 @@
 -- Test data for development
 
 -- signalement statuses
-INSERT INTO signalement_status (id, nom, description) VALUES
-(1, 'Nouveau', 'Signalement nouvellement créé'),
-(2, 'En cours', 'Signalement en cours de traitement'),
-(3, 'Résolu', 'Signalement traité et résolu');
+INSERT INTO signalement_status (id, nom, description,valeur) VALUES
+(1, 'Nouveau', 'Signalement nouvellement créé', 10),
+(2, 'En cours', 'Signalement en cours de traitement', 20),
+(3, 'Résolu', 'Signalement traité et résolu', 30);
 
 -- probleme statuses
 INSERT INTO probleme_status (id, nom, description, valeur) VALUES

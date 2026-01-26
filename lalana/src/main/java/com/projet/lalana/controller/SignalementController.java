@@ -37,7 +37,7 @@ public class SignalementController {
         }
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public ApiResponse getById(@PathVariable Integer id) {
         try {
             return signalementService.getById(id)

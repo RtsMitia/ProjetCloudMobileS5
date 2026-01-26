@@ -2,7 +2,6 @@ package com.projet.lalana.service;
 
 import com.projet.lalana.model.Probleme;
 import com.projet.lalana.repository.ProblemeRepository;
-import com.projet.lalana.model.ProblemeStatus;
 import com.projet.lalana.repository.ProblemeStatusRepository;
 import jakarta.transaction.Transactional;
 import java.util.NoSuchElementException;

@@ -16,21 +16,20 @@ import java.util.Map;
 @Service
 public class FirestoreService {
 
-    public List<SignalementRequest> getAllSignalementsEnvoyes() {
+    public List<DocumentSnapshot> fetchAllSignalementDocuments() {
+        List<DocumentSnapshot> result = new ArrayList<>();
         Firestore db = FirestoreClient.getFirestore();
-        List<SignalementRequest> signalementRequest = new ArrayList<>();
 
         try {
-            ApiFuture<QuerySnapshot> query = db.collection("signalements_problemes").get();
+            ApiFuture<QuerySnapshot> query = db.collection("signalements_add").get();
             QuerySnapshot querySnapshot = query.get();
-            for (DocumentSnapshot document : querySnapshot.getDocuments()) {
-                SignalementRequest sp = document.toObject(SignalementRequest.class);
-                signalementRequest.add(sp);
+            if (querySnapshot != null) {
+                result.addAll(querySnapshot.getDocuments());
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return signalementRequest;
+        return result;
     }
 }

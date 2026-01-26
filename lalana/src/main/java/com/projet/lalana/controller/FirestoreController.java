@@ -22,7 +22,7 @@ public class FirestoreController {
     @GetMapping("/signalements")
     public ApiResponse getAllSignalements() {
         try {
-            return new ApiResponse(true, "Données Firestore récupérées", firestoreService.getAllSignalementsEnvoyes());
+            return new ApiResponse(true, "Données Firestore récupérées", signalementService.getAllSignalementsFromFirestore());
         } catch (ServiceException se) {
             logger.error("ServiceException getAllSignalements", se);
             return new ApiResponse(false, se.getMessage(), null);
