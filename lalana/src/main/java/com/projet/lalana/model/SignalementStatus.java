@@ -21,4 +21,10 @@ public class SignalementStatus {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "firestore_synced", nullable = false)
+    private Boolean firestoreSynced = false;
+    
+    @Column(nullable = false)
+    private Integer valeur;
 }

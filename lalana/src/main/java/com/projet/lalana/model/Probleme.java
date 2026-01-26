@@ -29,4 +29,8 @@ public class Probleme {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "entreprise_id")
     private Entreprise entreprise;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id")
+    private ProblemeStatus status;
 }
