@@ -13,9 +13,9 @@ INSERT INTO probleme_status (id, nom, description, valeur) VALUES
 (3, 'Terminé', 'Travail terminé', 30);
 
 -- users
-INSERT INTO users (id, email, password, role) VALUES
-(1, 'admin@example.com', 'adminpass', 1),
-(2, 'user1@example.com', 'userpass', 2);
+INSERT INTO users (id, email, password) VALUES
+(1, 'admin@example.com', 'adminpass'),
+(2, 'user1@example.com', 'userpass');
 
 -- points
 INSERT INTO points (id, x, y, localisation) VALUES

@@ -20,6 +20,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserHistoryRepository userHistoryRepository;
+    private final AuthService authService;
 
     public UserHistory deblockUser(Integer userId, String note) {
         try {
