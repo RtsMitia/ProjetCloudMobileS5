@@ -2,9 +2,13 @@ package com.projet.lalana.service;
 
 import com.projet.lalana.model.Probleme;
 import com.projet.lalana.repository.ProblemeRepository;
-import com.projet.lalana.model.ProblemeStatus;
 import com.projet.lalana.repository.ProblemeStatusRepository;
+import com.projet.lalana.repository.ProblemeHistoryRepository;
+import com.projet.lalana.model.ProblemeHistory;
+import com.projet.lalana.model.ProblemeStatus;
+import java.time.LocalDateTime;
 import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -22,6 +26,7 @@ public class ProblemeService {
 
     private final ProblemeRepository problemeRepository;
     private final ProblemeStatusRepository problemeStatusRepository;
+    private final ProblemeHistoryRepository problemeHistoryRepository;
 
     public List<Probleme> getAll() {
         try {
@@ -41,6 +46,34 @@ public class ProblemeService {
         }
     }
 
+    @Transactional
+    public Probleme resoudre(Integer id) {
+        try {
+            Probleme probleme = problemeRepository.findById(id)
+                    .orElseThrow(() -> new ServiceException("Problème non trouvé id=" + id));
+
+            // Assumption: status with id=2 corresponds to the "résolu/terminé" status in the database.
+            final Integer RESOLVED_STATUS_ID = 2;
+            ProblemeStatus resolvedStatus = problemeStatusRepository.findById(RESOLVED_STATUS_ID)
+                    .orElseThrow(() -> new ServiceException("Status résolu introuvable (id=" + RESOLVED_STATUS_ID + ")"));
+
+            probleme.setStatus(resolvedStatus);
+            Probleme saved = problemeRepository.save(probleme);
+
+            ProblemeHistory history = new ProblemeHistory();
+            history.setProbleme(saved);
+            history.setStatus(resolvedStatus);
+            history.setChangedAt(LocalDateTime.now());
+            problemeHistoryRepository.save(history);
+
+            return saved;
+        } catch (ServiceException se) {
+            throw se;
+        } catch (Exception e) {
+            logger.error("Erreur lors de la résolution du problème id={}", id, e);
+            throw new ServiceException("Erreur lors de la résolution du problème id=" + id, e);
+        }
+    }
     public List<Probleme> findByValeur(Integer valeur) {
         try {
             return problemeRepository.findByValeur(valeur);
