@@ -1,10 +1,10 @@
-import { 
-  collection, 
-  addDoc, 
+import {
+  collection,
+  addDoc,
   doc,
-  getDocs, 
-  query, 
-  where, 
+  getDocs,
+  query,
+  where,
   orderBy,
   Timestamp,
   serverTimestamp,
@@ -16,7 +16,7 @@ import { db, auth } from './firebase';
 import type { SignalementRequest, Signalement } from '@/types/firestore';
 
 export class SignalementService {
-  private collectionName = 'signalements';
+  private collectionName = 'signalementListe';
 
   async createSignalement(data: SignalementRequest): Promise<string> {
     try {
@@ -26,32 +26,24 @@ export class SignalementService {
       }
 
       const signalementData = {
+        id: null,
         userId: data.userId,
         userEmail: currentUser.email || '',
-        
-        location: {
-          x: data.x,
-          y: data.y,
-          localisation: data.localisation || ''
-        },
-        
+        x: data.x,
+        y: data.y,
+        localisation: data.localisation || '',
         description: data.description || '',
-        
-        status: {
-          id: 1,
-          nom: 'En attente',
-          description: 'Signalement en attente de validation'
-        },
-        
-        createdAt: Timestamp.fromDate(data.createdAt),
-        updatedAt: serverTimestamp(), 
-        
+        statusLibelle: data.statusLibelle || 'En attente',
+        createdAt: typeof data.createdAt === 'string'
+          ? data.createdAt
+          : Timestamp.fromDate(data.createdAt),
+        updatedAt: serverTimestamp(),
         photoUrls: [],
-        priority: 3 
+        priority: 3
       };
 
       const docRef = await addDoc(
-        collection(db, this.collectionName), 
+        collection(db, this.collectionName),
         signalementData
       );
 
@@ -80,9 +72,9 @@ export class SignalementService {
       const signalements: Signalement[] = [];
 
       querySnapshot.forEach((doc) => {
-        signalements.push({ 
-          id: doc.id, 
-          ...doc.data() 
+        signalements.push({
+          id: doc.id,
+          ...doc.data()
         } as unknown as Signalement);
       });
 
@@ -104,8 +96,8 @@ export class SignalementService {
       const signalements: Signalement[] = [];
 
       querySnapshot.forEach((doc) => {
-        signalements.push({ 
-          id: doc.id, ...doc.data() 
+        signalements.push({
+          id: doc.id, ...doc.data()
         } as unknown as Signalement);
       });
 
@@ -129,12 +121,12 @@ export class SignalementService {
       (querySnapshot: QuerySnapshot<DocumentData>) => {
         const signalements: Signalement[] = [];
         querySnapshot.forEach((doc) => {
-          signalements.push({ 
-            id: doc.id, 
-            ...doc.data() 
+          signalements.push({
+            id: doc.id,
+            ...doc.data()
           } as unknown as Signalement);
         });
-        
+
         console.log(`${signalements.length} signalements reçus de Firestore`);
         callback(signalements);
       },

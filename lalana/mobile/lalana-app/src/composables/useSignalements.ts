@@ -11,7 +11,6 @@ export function useSignalements() {
   const isLoading = ref(false);
   const error = ref<string>('');
   
-  // Filtres
   const selectedStatus = ref<string>('all');
   const showOnlyMySignalements = ref<boolean>(false);
   
@@ -34,12 +33,10 @@ export function useSignalements() {
   function applyFilters(): void {
     let filtered = [...signalements.value];
 
-    // Filtre par statut
     if (selectedStatus.value !== 'all') {
-      filtered = filtered.filter(s => s.status.nom === selectedStatus.value);
+      filtered = filtered.filter(s => s.statusLibelle === selectedStatus.value);
     }
 
-    // Filtre "Mes signalements" (uniquement si connecté)
     if (showOnlyMySignalements.value && currentUser.value?.uid) {
       filtered = filtered.filter(s => s.userId === currentUser.value?.uid);
     }
@@ -51,7 +48,7 @@ export function useSignalements() {
     lat: number,
     lng: number,
     description: string,
-    localisation: string | null
+    localisation: string
   ): Promise<string> {
     if (!currentUser.value) {
       throw new Error('Utilisateur non connecté');
@@ -62,12 +59,14 @@ export function useSignalements() {
 
     try {
       const signalementData: SignalementRequest = {
+        id: null,
         userId: currentUser.value.uid,
         x: lng,
         y: lat,
         localisation,
         description,
-        createdAt: new Date()
+        statusLibelle: 'En attente',
+        createdAt: new Date().toISOString()
       };
 
       const id = await signalementService.createSignalement(signalementData);
@@ -99,11 +98,11 @@ export function useSignalements() {
     total: signalements.value.length,
     filtered: filteredSignalements.value.length,
     byStatus: {
-      enAttente: signalements.value.filter(s => s.status.nom === 'En attente').length,
-      valide: signalements.value.filter(s => s.status.nom === 'Validé').length,
-      enCours: signalements.value.filter(s => s.status.nom === 'En cours').length,
-      resolu: signalements.value.filter(s => s.status.nom === 'Résolu').length,
-      rejete: signalements.value.filter(s => s.status.nom === 'Rejeté').length,
+      enAttente: signalements.value.filter(s => s.statusLibelle === 'En attente').length,
+      valide: signalements.value.filter(s => s.statusLibelle === 'Validé').length,
+      enCours: signalements.value.filter(s => s.statusLibelle === 'En cours').length,
+      resolu: signalements.value.filter(s => s.statusLibelle === 'Résolu').length,
+      rejete: signalements.value.filter(s => s.statusLibelle === 'Rejeté').length,
     }
   }));
 

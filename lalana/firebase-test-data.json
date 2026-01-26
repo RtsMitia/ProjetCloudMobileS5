@@ -1,143 +1,103 @@
 {
   "signalements": [
     {
+      "id": null,
       "userId": "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
       "description": "Nid-de-poule important sur la route principale. Risque de dommage pour les véhicules.",
-      "location": {
-        "x": 47.5079,
-        "y": -18.8792,
-        "localisation": "Avenue de l'Indépendance, Antananarivo"
-      },
-      "status": {
-        "nom": "En attente",
-        "description": "En attente de validation"
-      },
+      "x": 47.5079,
+      "y": -18.8792,
+      "localisation": "Avenue de l'Indépendance, Antananarivo",
+      "statusLibelle": "En attente",
       "createdAt": "2026-01-15T08:30:00Z"
     },
     {
+      "id": null,
       "userId": "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
       "description": "Route complètement dégradée après les pluies. Circulation difficile.",
-      "location": {
-        "x": 47.5120,
-        "y": -18.8750,
-        "localisation": "Route de Ivato"
-      },
-      "status": {
-        "nom": "En cours",
-        "description": "Travaux en cours"
-      },
+      "x": 47.5120,
+      "y": -18.8750,
+      "localisation": "Route de Ivato",
+      "statusLibelle": "En cours",
       "createdAt": "2026-01-14T14:20:00Z"
     },
     {
+      "id": null,
       "userId": "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
       "description": "Signalisation manquante au carrefour. Risque d'accident.",
-      "location": {
-        "x": 47.5150,
-        "y": -18.8820,
-        "localisation": "Carrefour Analakely"
-      },
-      "status": {
-        "nom": "Résolu",
-        "description": "Problème résolu"
-      },
+      "x": 47.5150,
+      "y": -18.8820,
+      "localisation": "Carrefour Analakely",
+      "statusLibelle": "Résolu",
       "createdAt": "2026-01-10T10:15:00Z"
     },
     {
+      "id": null,
       "userId": "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
       "description": "Trottoir cassé devant l'école. Danger pour les enfants.",
-      "location": {
-        "x": 47.5200,
-        "y": -18.8700,
-        "localisation": "Rue de l'École, Ankorondrano"
-      },
-      "status": {
-        "nom": "En attente",
-        "description": "En attente de validation"
-      },
+      "x": 47.5200,
+      "y": -18.8700,
+      "localisation": "Rue de l'École, Ankorondrano",
+      "statusLibelle": "En attente",
       "createdAt": "2026-01-18T09:00:00Z"
     },
     {
+      "id": null,
       "userId": "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
       "description": "Fuite d'eau importante qui endommage la chaussée.",
-      "location": {
-        "x": 47.5050,
-        "y": -18.8850,
-        "localisation": "Avenue Gal Gabriel Ramanantsoa"
-      },
-      "status": {
-        "nom": "En cours",
-        "description": "Intervention en cours"
-      },
+      "x": 47.5050,
+      "y": -18.8850,
+      "localisation": "Avenue Gal Gabriel Ramanantsoa",
+      "statusLibelle": "En cours",
       "createdAt": "2026-01-16T11:45:00Z"
     },
     {
+      "id": null,
       "userId": "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
       "description": "Éclairage public défaillant. Zone dangereuse la nuit.",
-      "location": {
-        "x": 47.5100,
-        "y": -18.8780,
-        "localisation": "Boulevard de Madagascar"
-      },
-      "status": {
-        "nom": "En attente",
-        "description": "En attente de validation"
-      },
+      "x": 47.5100,
+      "y": -18.8780,
+      "localisation": "Boulevard de Madagascar",
+      "statusLibelle": "En attente",
       "createdAt": "2026-01-17T16:30:00Z"
     },
     {
+      "id": null,
       "userId": "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
       "description": "Réparation du pont terminée. Accès à nouveau sécurisé.",
-      "location": {
-        "x": 47.5180,
-        "y": -18.8730,
-        "localisation": "Pont d'Ambohijatovo"
-      },
-      "status": {
-        "nom": "Résolu",
-        "description": "Travaux terminés"
-      },
+      "x": 47.5180,
+      "y": -18.8730,
+      "localisation": "Pont d'Ambohijatovo",
+      "statusLibelle": "Résolu",
       "createdAt": "2026-01-12T13:00:00Z"
     },
     {
+      "id": null,
       "userId": "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
       "description": "Glissière de sécurité endommagée après un accident.",
-      "location": {
-        "x": 47.5220,
-        "y": -18.8680,
-        "localisation": "Route Nationale 3, Ambatobe"
-      },
-      "status": {
-        "nom": "En cours",
-        "description": "Réparation planifiée"
-      },
+      "x": 47.5220,
+      "y": -18.8680,
+      "localisation": "Route Nationale 3, Ambatobe",
+      "statusLibelle": "En cours",
       "createdAt": "2026-01-19T07:20:00Z"
     },
     {
+      "id": null,
       "userId": "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
       "description": "Bouche d'égout sans couvercle. Très dangereux !",
-      "location": {
-        "x": 47.5030,
-        "y": -18.8810,
-        "localisation": "Rue Rainibetsimisaraka"
-      },
-      "status": {
-        "nom": "En attente",
-        "description": "Signalement reçu"
-      },
+      "x": 47.5030,
+      "y": -18.8810,
+      "localisation": "Rue Rainibetsimisaraka",
+      "statusLibelle": "En attente",
       "createdAt": "2026-01-20T08:00:00Z"
     },
     {
+      "id": null,
       "userId": "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
       "description": "Travaux de réfection de la chaussée achevés.",
-      "location": {
-        "x": 47.5160,
-        "y": -18.8760,
-        "localisation": "Avenue de l'Indépendance"
-      },
-      "status": {
-        "nom": "Résolu",
-        "description": "Chaussée refaite"
-      },
+      "x": 47.5160,
+      "y": -18.8760,
+      "localisation": "Avenue de l'Indépendance",
+      "statusLibelle": "Résolu",
       "createdAt": "2026-01-11T15:30:00Z"
     }
   ],
@@ -150,11 +110,12 @@
       "4. Créer une collection 'signalements' si elle n'existe pas",
       "5. Pour chaque objet dans le tableau 'signalements', cliquer sur 'Ajouter un document'",
       "6. Laisser Firebase générer un ID automatique",
-      "7. Copier les champs (userId, description, location, status, createdAt)",
-      "8. Pour le champ 'createdAt', utiliser le type 'timestamp' et convertir la date ISO",
-      "9. Pour 'location', créer un objet avec les sous-champs x, y, localisation",
-      "10. Pour 'status', créer un objet avec les sous-champs nom, description"
+      "7. NOUVEAU FORMAT: Les champs sont maintenant 'flat' (non imbriqués)",
+      "8. Copier les champs: userId, description, x, y, localisation, statusLibelle, createdAt",
+      "9. Pour le champ 'createdAt', utiliser le type 'timestamp' et convertir la date ISO",
+      "10. Note: 'id' sera null ou omis (Firebase génère automatiquement l'ID)"
     ],
-    "note": "Vous pouvez aussi utiliser Firebase Admin SDK ou l'import/export Firestore pour automatiser l'import de ces données."
+    "note": "IMPORTANT: Le nouveau format utilise x, y, localisation et statusLibelle directement (plus d'objets location et status imbriqués).",
+    "automation": "Vous pouvez aussi utiliser Firebase Admin SDK ou l'import/export Firestore pour automatiser l'import de ces données."
   }
 }

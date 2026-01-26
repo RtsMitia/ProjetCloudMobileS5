@@ -30,27 +30,32 @@ export interface SignalementStatus {
 
 /**
  * Interface pour un signalement complet (document dans Firestore)
+ * Format nouveau : flat structure avec x, y, localisation et statusLibelle
  */
 export interface Signalement {
-  id?: string; 
+  id?: string | null;
   userId: string;
-  userEmail: string;
-  location: Location;
+  userEmail?: string;
+  x: number; // Longitude
+  y: number; // Latitude
+  localisation: string; // Adresse ou description
   description: string;
-  status: SignalementStatus;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  statusLibelle: string; // Ex: "En attente", "En cours", "Résolu"
+  createdAt: Timestamp | string;
+  updatedAt?: Timestamp;
   photoUrls?: string[]; 
   priority?: number; 
 }
 
 export interface SignalementRequest {
+  id?: null;
   userId: string; 
   x: number; 
   y: number; 
-  localisation: string | null; 
-  description?: string; 
-  createdAt: Date; 
+  localisation: string; 
+  description: string; 
+  statusLibelle?: string;
+  createdAt: Date | string; 
 }
 
 /**
@@ -75,15 +80,49 @@ export interface Entreprise {
 
 /**
  * Interface pour un problème (créé par le manager)
+ * Format flat pour Firestore
  */
 export interface Probleme {
-  signalementId: string;
+  id?: number | null;
   surface: number; // m²
   budgetEstime: number;
-  entreprise: Entreprise | null;
-  status: ProblemeStatus;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  entrepriseId: number | null;
+  entrepriseName: string | null;
+  entrepriseContact: string | null;
+  statusId: number;
+  statusNom: string;
+  statusValeur: number; // 0-100
+  signalementId: number;
+  userId: number;
+  userEmail: string;
+  x: number; // Longitude
+  y: number; // Latitude
+  localisation: string;
+  description: string;
+  statusLibelle: string;
+  createdAt?: Timestamp | string;
+  updatedAt?: Timestamp | string;
+}
+
+export interface ProblemeRequest {
+  id?: null;
+  surface: number;
+  budgetEstime: number;
+  entrepriseId?: number | null;
+  entrepriseName?: string | null;
+  entrepriseContact?: string | null;
+  statusId: number;
+  statusNom: string;
+  statusValeur: number;
+  signalementId: number;
+  userId: number;
+  userEmail: string;
+  x: number;
+  y: number;
+  localisation: string;
+  description: string;
+  statusLibelle: string;
+  createdAt?: Date | string;
 }
 
 /**

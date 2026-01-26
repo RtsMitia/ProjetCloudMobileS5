@@ -27,6 +27,12 @@
       <!-- Carte Leaflet -->
       <div id="map" class="map-container"></div>
       
+      <!-- Bouton de géolocalisation -->
+      <UserLocationButton 
+        :isTrackingLocation="isTrackingLocation" 
+        @toggle-tracking="handleToggleTracking" 
+      />
+      
       <!-- Bouton d'ajout (seulement si connecté) -->
       <AddSignalementButton 
         :show="isAuthenticated" 
@@ -39,7 +45,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { IonPage, IonContent } from '@ionic/vue';
-import { MapHeader, MapFilters, MapLoader, AddSignalementButton } from '@/components/map';
+import { MapHeader, MapFilters, MapLoader, AddSignalementButton, UserLocationButton } from '@/components/map';
 import { useAuth, useSignalements, useMap } from '@/composables';
 import { alertService } from '@/services/alert.service';
 
@@ -56,12 +62,17 @@ const {
   createSignalement
 } = useSignalements();
 const { 
-  isMapReady, 
+  isMapReady,
+  isTrackingLocation,
+  userLocation,
   initMap, 
   destroyMap, 
   displaySignalements,
   addTempMarker,
-  removeTempMarker
+  removeTempMarker,
+  startTrackingLocation,
+  stopTrackingLocation,
+  centerOnUserLocation
 } = useMap();
 
 // State local
@@ -91,13 +102,58 @@ function handleFiltersChanged() {
   applyFilters();
 }
 
+function handleToggleTracking() {
+  if (isTrackingLocation.value) {
+    stopTrackingLocation();
+  } else {
+    startTrackingLocation(true);
+  }
+}
+
 async function handleLogout() {
   await logout();
 }
 
 async function handleAddSignalement() {
-  isCreatingSignalement.value = true;
-  await alertService.showSignalementModeInfo();
+  // Demander le choix de position
+  const choice = await alertService.showLocationChoice();
+  
+  if (!choice) return; // Annulé
+
+  if (choice === 'current') {
+    // Créer le signalement à la position actuelle
+    await createSignalementAtCurrentLocation();
+  } else {
+    // Mode sélection sur la carte
+    isCreatingSignalement.value = true;
+    await alertService.showSignalementModeInfo();
+  }
+}
+
+async function createSignalementAtCurrentLocation() {
+  if (!userLocation.value) {
+    await alertService.showError('Position non disponible. Veuillez activer la géolocalisation.');
+    return;
+  }
+
+  const { lat, lng } = userLocation.value;
+  
+  // Ajouter marqueur temporaire
+  addTempMarker(lat, lng);
+
+  // Afficher le formulaire
+  const formData = await alertService.showSignalementForm();
+
+  if (formData) {
+    try {
+      await createSignalement(lat, lng, formData.description, formData.localisation || '');
+      await alertService.showSuccess('Signalement créé avec succès !');
+    } catch (error) {
+      await alertService.showError('Impossible de créer le signalement. Vérifiez votre connexion.');
+    }
+  }
+
+  removeTempMarker();
 }
 
 async function handleMapClick(lat: number, lng: number) {
@@ -111,7 +167,7 @@ async function handleMapClick(lat: number, lng: number) {
 
   if (formData) {
     try {
-      await createSignalement(lat, lng, formData.description, formData.localisation || null);
+      await createSignalement(lat, lng, formData.description, formData.localisation || '');
       await alertService.showSuccess('Signalement créé avec succès !');
     } catch (error) {
       await alertService.showError('Impossible de créer le signalement. Vérifiez votre connexion.');

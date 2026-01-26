@@ -102,5 +102,35 @@ export const alertService = {
       'Mode signalement activé',
       'Cliquez sur la carte pour placer un marqueur à l\'emplacement du problème.'
     );
+  },
+
+  /**
+   * Demander le choix de position pour le signalement
+   * @returns 'current' pour la position actuelle, 'map' pour cliquer sur la carte, null si annulé
+   */
+  async showLocationChoice(): Promise<'current' | 'map' | null> {
+    return new Promise(async (resolve) => {
+      const alert = await alertController.create({
+        header: '📍 Localisation du signalement',
+        message: 'Où se trouve le problème ?',
+        buttons: [
+          {
+            text: 'Annuler',
+            role: 'cancel',
+            handler: () => resolve(null)
+          },
+          {
+            text: 'À ma position',
+            cssClass: 'primary-button',
+            handler: () => resolve('current')
+          },
+          {
+            text: 'Choisir sur la carte',
+            handler: () => resolve('map')
+          }
+        ]
+      });
+      await alert.present();
+    });
   }
 };
