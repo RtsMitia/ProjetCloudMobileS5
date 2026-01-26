@@ -28,6 +28,11 @@
       <ion-button expand="block" @click="login">
         Se connecter
       </ion-button>
+      
+      <ion-button expand="block" fill="outline" @click="continueAsGuest" style="margin-top: 10px;">
+        Accéder en tant que visiteur
+      </ion-button>
+      
       <ion-text color="danger" v-if="error">
         {{ error }}
       </ion-text>
@@ -100,6 +105,11 @@
       user.value = userCredential.user;
       success.value = true;
       error.value = "";
+      
+      // Rediriger vers la carte après connexion réussie
+      setTimeout(() => {
+        router.push('/map');
+      }, 500);
     } catch (e: any) {
       console.error('Erreur auth Firebase:', e);
       if (e && e.code === 'auth/invalid-email') {
@@ -114,5 +124,10 @@
       success.value = false;
       user.value = null;
     }
+    };
+
+    const continueAsGuest = () => {
+      console.log('Accès en mode visiteur');
+      router.push('/map');
     };
 </script>

@@ -1,16 +1,15 @@
 {
 
-  "apiKey": "AIzaSyAux1vRChlG_x_aOTY5sEvZ0zk4QXl7YYA",
+  "apiKey": "AIzaSyAl61XlAUcuspotTSFl35BLECsU959AEa8",
 
-  "authDomain": "gestionroutiere-aaa53.firebaseapp.com",
+  "authDomain": "cloud-lalana.firebaseapp.com",
 
-  "projectId": "gestionroutiere-aaa53",
+  "projectId": "cloud-lalana",
 
-  "storageBucket": "gestionroutiere-aaa53.firebasestorage.app",
+  "storageBucket": "cloud-lalana.appspot.com",
+  "messagingSenderId": "45207388578",
 
-  "messagingSenderId": "997547144040",
+  "appId": "1:45207388578:web:b7df253b27fd209ed232fb",
 
-  "appId": "1:997547144040:web:3a8b8de80842c006435cdd",
-
-  "measurementId": "G-EHW0B3B9VF"
+  "measurementId": "G-0QQR8MX66D"
 }
