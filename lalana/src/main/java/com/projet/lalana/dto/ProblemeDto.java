@@ -20,6 +20,7 @@ public class ProblemeDto {
     private Double surface;
     private Double budgetEstime;
     private Integer entrepriseId;
+    private String entrepriseName;
     private Integer statusId;
     private String statusNom;
     private Integer statusValeur;
@@ -43,7 +44,10 @@ public class ProblemeDto {
         d.setId(p.getId());
         d.setSurface(p.getSurface());
         d.setBudgetEstime(p.getBudgetEstime());
-        if (p.getEntreprise() != null) d.setEntrepriseId(p.getEntreprise().getId());
+        if (p.getEntreprise() != null) {
+            d.setEntrepriseId(p.getEntreprise().getId());
+            d.setEntrepriseName(p.getEntreprise().getNom());
+        }
 
         if (p.getProblemeStatus() != null) {
             d.setStatusId(p.getProblemeStatus().getId());

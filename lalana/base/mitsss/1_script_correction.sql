@@ -34,8 +34,9 @@ CREATE TABLE users_history (
 CREATE TABLE signalement_status (
     id SERIAL PRIMARY KEY,
     nom VARCHAR(50) NOT NULL,
-    description TEXT
-    ,firestore_synced BOOLEAN DEFAULT FALSE
+    description TEXT,
+    valeur INT,
+    firestore_synced BOOLEAN DEFAULT FALSE
 );
 
 -- =====================
@@ -79,7 +80,7 @@ CREATE TABLE probleme_status (
     nom VARCHAR(50) NOT NULL,
     description TEXT,
     valeur INTEGER NOT NULL,
-    ,firestore_synced BOOLEAN DEFAULT FALSE
+    firestore_synced BOOLEAN DEFAULT FALSE
 );
 
 -- =====================
@@ -91,7 +92,8 @@ CREATE TABLE probleme (
     surface NUMERIC(10,2) NOT NULL,
     budget_estime NUMERIC(15,2) NOT NULL,
     entreprise_id INT REFERENCES entreprise(id),
-    ,firestore_synced BOOLEAN DEFAULT FALSE
+    status_id INT REFERENCES probleme_status(id),
+    firestore_synced BOOLEAN DEFAULT FALSE
 );
 
 -- =====================
