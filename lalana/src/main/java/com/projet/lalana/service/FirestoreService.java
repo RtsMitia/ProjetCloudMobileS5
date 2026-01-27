@@ -17,10 +17,6 @@ import java.util.Map;
 @Service
 public class FirestoreService {
 
-
-    /**
-     * Fetch raw Firestore documents from the `signalements_problemes` collection.
-     */
     public List<DocumentSnapshot> fetchAllSignalementDocuments() {
         List<DocumentSnapshot> result = new ArrayList<>();
         Firestore db = FirestoreClient.getFirestore();

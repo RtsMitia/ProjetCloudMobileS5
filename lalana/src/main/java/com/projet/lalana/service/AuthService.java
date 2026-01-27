@@ -12,8 +12,11 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import com.projet.lalana.model.User;
+import com.projet.lalana.model.UserHistory;
 import com.projet.lalana.repository.UserRepository;
+import com.projet.lalana.repository.UserHistoryRepository;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,14 +28,31 @@ import com.google.firebase.auth.UserRecord.CreateRequest;
 @Service
 public class AuthService {
 
+    // Status codes for UserHistory
+    private static final int STATUS_LOGIN_SUCCESS = 1;
+    private static final int STATUS_LOGIN_FAILED = 2;
+    private static final int STATUS_ACCOUNT_LOCKED = 3;
+    private static final int STATUS_ACCOUNT_UNLOCKED = 4;
+
     private final RestTemplate restTemplate = new RestTemplate();
     private final String firebaseApiKey;
     private final UserRepository userRepository;
+    private final UserHistoryRepository userHistoryRepository;
     private final Environment env;
+    
+    @Value("${security.max-login-attempts:3}")
+    private int maxLoginAttempts;
+    
+    @Value("${security.lock-duration-minutes:15}")
+    private int lockDurationMinutes;
 
-    public AuthService(@Value("${firebase.api.key}") String firebaseApiKey, UserRepository userRepository, Environment env) {
+    public AuthService(@Value("${firebase.api.key}") String firebaseApiKey, 
+                      UserRepository userRepository,
+                      UserHistoryRepository userHistoryRepository,
+                      Environment env) {
         this.firebaseApiKey = firebaseApiKey;
         this.userRepository = userRepository;
+        this.userHistoryRepository = userHistoryRepository;
         this.env = env;
         System.out.println("[DEBUG] spring.datasource.url=" + env.getProperty("spring.datasource.url"));
         System.out.println("[DEBUG] active firebase.api.key present=" + (this.firebaseApiKey != null && !this.firebaseApiKey.isEmpty()));
@@ -127,6 +147,7 @@ public class AuthService {
 
     /**
      * Local login fallback — verifies email/password against local DB.
+     * Also checks for account locks and tracks failed attempts.
      */
     public User login(String email, String password) {
         System.out.println("[DEBUG] spring.datasource.url=" + env.getProperty("spring.datasource.url"));
@@ -145,11 +166,28 @@ public class AuthService {
             }
 
             User user = userOpt.get();
+            
+            // Check if account is locked
+            if (isAccountLocked(user)) {
+                throw new ServiceException("Compte bloqué en raison de trop nombreuses tentatives de connexion. Veuillez réessayer plus tard.");
+            }
 
             if (!password.equals(user.getPassword())) {
+                // Record failed attempt
+                recordFailedLoginAttempt(user);
+                
+                // Check if we should lock the account
+                long failedAttempts = countRecentFailedAttempts(user);
+                if (failedAttempts >= maxLoginAttempts) {
+                    lockAccount(user);
+                    throw new ServiceException("Compte bloqué en raison de trop nombreuses tentatives de connexion. Veuillez réessayer plus tard.");
+                }
+                
                 throw new ServiceException("Email ou mot de passe incorrect");
             }
 
+            // Successful login - record it and reset failed attempts
+            recordSuccessfulLogin(user);
             System.out.println("User " + email + " logged in successfully (local)");
             return user;
 
@@ -159,6 +197,87 @@ public class AuthService {
             System.out.println("Erreur lors de la connexion pour l'email " + email + " : " + e.getMessage());
             throw new ServiceException("Erreur lors de la connexion", e);
         }
+    }
+    
+    /**
+     * Check if user account is currently locked
+     */
+    private boolean isAccountLocked(User user) {
+        Optional<UserHistory> lockRecord = userHistoryRepository.findLatestByUserAndStatus(user, STATUS_ACCOUNT_LOCKED);
+        
+        if (lockRecord.isEmpty()) {
+            return false;
+        }
+        
+        LocalDateTime lockTime = lockRecord.get().getChangedAt();
+        LocalDateTime unlockTime = lockTime.plusMinutes(lockDurationMinutes);
+        
+        // Check if lock has expired
+        if (LocalDateTime.now().isAfter(unlockTime)) {
+            // Lock has expired, record unlock
+            autoUnlockAccount(user);
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Count recent failed login attempts within the lock duration window
+     */
+    private long countRecentFailedAttempts(User user) {
+        LocalDateTime since = LocalDateTime.now().minusMinutes(lockDurationMinutes);
+        return userHistoryRepository.countByUserAndStatusSince(user, STATUS_LOGIN_FAILED, since);
+    }
+    
+    /**
+     * Record a failed login attempt in history
+     */
+    private void recordFailedLoginAttempt(User user) {
+        UserHistory history = new UserHistory();
+        history.setUser(user);
+        history.setStatus(STATUS_LOGIN_FAILED);
+        history.setChangedAt(LocalDateTime.now());
+        history.setDescription("Tentative de connexion échouée");
+        userHistoryRepository.save(history);
+    }
+    
+    /**
+     * Record a successful login in history
+     */
+    private void recordSuccessfulLogin(User user) {
+        UserHistory history = new UserHistory();
+        history.setUser(user);
+        history.setStatus(STATUS_LOGIN_SUCCESS);
+        history.setChangedAt(LocalDateTime.now());
+        history.setDescription("Connexion réussie");
+        userHistoryRepository.save(history);
+    }
+    
+    /**
+     * Lock user account after max failed attempts
+     */
+    private void lockAccount(User user) {
+        UserHistory history = new UserHistory();
+        history.setUser(user);
+        history.setStatus(STATUS_ACCOUNT_LOCKED);
+        history.setChangedAt(LocalDateTime.now());
+        history.setDescription("Compte bloqué après " + maxLoginAttempts + " tentatives échouées");
+        userHistoryRepository.save(history);
+        System.out.println("Account locked for user: " + user.getEmail());
+    }
+    
+    /**
+     * Auto-unlock account when lock duration expires
+     */
+    private void autoUnlockAccount(User user) {
+        UserHistory history = new UserHistory();
+        history.setUser(user);
+        history.setStatus(STATUS_ACCOUNT_UNLOCKED);
+        history.setChangedAt(LocalDateTime.now());
+        history.setDescription("Déblocage automatique après expiration du délai");
+        userHistoryRepository.save(history);
+        System.out.println("Account auto-unlocked for user: " + user.getEmail());
     }
 
     /**
