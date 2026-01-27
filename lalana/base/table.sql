@@ -16,7 +16,8 @@ CREATE TABLE users_history (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id),
     changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status INTEGER NOT NULL
+    status INTEGER NOT NULL,
+    description TEXT
 );
 
 CREATE TABLE signalement(
