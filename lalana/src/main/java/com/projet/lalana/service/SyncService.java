@@ -62,7 +62,8 @@ public class SyncService {
                 DocumentReference ref = db.collection("signalements").document(docId);
                 ApiFuture<WriteResult> w = ref.set(doc);
                 w.get();
-                // do not modify firestore_synced field for now
+                // mark local signalement as synced so it won't be re-synced
+                markSignalementSynced(s.getId());
                 count++;
             } catch (Exception e) {
                 System.out.println("Failed to sync signalement id=" + s.getId() + " : " + e.getMessage());
@@ -113,9 +114,10 @@ public class SyncService {
         return deleted;
     }
 
-    // kept for future use; intentionally no-op to avoid modifying firestore flag
     @Transactional
     protected void markSignalementSynced(Integer id) {
-        // no-op
+        Signalement s = signalementRepository.findById(id).orElseThrow(() -> new RuntimeException("Signalement not found " + id));
+        s.setFirestoreSynced(true);
+        signalementRepository.save(s);
     }
 }

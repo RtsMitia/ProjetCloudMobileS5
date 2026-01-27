@@ -67,6 +67,8 @@ public class ProblemeController {
         } catch (Exception e) {
             logger.error("Unexpected error resoudre probleme id={}", id, e);
             return new ApiResponse(false, "Erreur serveur lors de la résolution du problème", null);
+        }
+    }
     @GetMapping("/valeur/10")
     public ApiResponse getProblemesValeur10() {
         try {

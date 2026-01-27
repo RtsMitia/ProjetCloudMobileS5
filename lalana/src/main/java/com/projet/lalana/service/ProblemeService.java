@@ -7,7 +7,6 @@ import com.projet.lalana.repository.ProblemeHistoryRepository;
 import com.projet.lalana.model.ProblemeHistory;
 import com.projet.lalana.model.ProblemeStatus;
 import java.time.LocalDateTime;
-import jakarta.transaction.Transactional;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
@@ -57,7 +56,7 @@ public class ProblemeService {
             ProblemeStatus resolvedStatus = problemeStatusRepository.findById(RESOLVED_STATUS_ID)
                     .orElseThrow(() -> new ServiceException("Status résolu introuvable (id=" + RESOLVED_STATUS_ID + ")"));
 
-            probleme.setStatus(resolvedStatus);
+            probleme.setProblemeStatus(resolvedStatus);
             Probleme saved = problemeRepository.save(probleme);
 
             ProblemeHistory history = new ProblemeHistory();
