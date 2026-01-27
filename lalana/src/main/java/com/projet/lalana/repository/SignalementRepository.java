@@ -8,7 +8,7 @@ public interface SignalementRepository extends JpaRepository<Signalement, Intege
 	java.util.List<Signalement> findByFirestoreSyncedFalse();
 
 	// Return all signalements whose status.valeur <= 10 and not yet synced
-	@Query("SELECT s FROM Signalement s WHERE s.status.valeur <= 10 AND s.firestore_synced = false")
+	@Query("SELECT s FROM Signalement s WHERE s.status.valeur <= 10 AND s.firestoreSynced = false")
 	java.util.List<Signalement> findByStatusValeurLE10();
 
 	// Return signalements whose status.valeur = 30

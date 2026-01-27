@@ -20,6 +20,7 @@ public class SynchroService {
     private final SignalementService signalementService;
     private final ProblemeService problemeService;
     private final UserService userService;
+    private final SyncService syncService;
 
     /**
      * Run a full synchronization cycle:
@@ -31,25 +32,15 @@ public class SynchroService {
     @Transactional
     public SyncResult fullSync() {
         try {
-            // 1) Import signalements from Firestore
-            int importedSignalements = signalementService.synchronisation();
-
-            // 2) Sync blocked users from Firebase into local DB (creates UserHistory entries)
-            List<UserHistory> blockedHistories = userService.getDatasFromFirebase();
-
-            // 3) Push local unblocked users back to Firebase
-            List<com.projet.lalana.model.User> reactivated = userService.syncUnblockedUserToFirebase();
-
-            // 4) Prepare current snapshots to return
-            List<Signalement> allSignalements = signalementService.getAll();
-            List<Probleme> allProblemes = problemeService.getAll();
+            // Delegate to SyncService combined full-sync flow
+            java.util.Map<String, Object> report = syncService.runFullSyncCycle();
 
             SyncResult result = new SyncResult();
-            result.setImportedSignalements(importedSignalements);
-            result.setBlockedCount(blockedHistories != null ? blockedHistories.size() : 0);
-            result.setReactivatedCount(reactivated != null ? reactivated.size() : 0);
-            result.setSignalements(allSignalements);
-            result.setProblemes(allProblemes);
+            result.setImportedSignalements((int) report.getOrDefault("imported_signalements", 0));
+            result.setBlockedCount((int) report.getOrDefault("blocked_histories", 0));
+            result.setReactivatedCount((int) report.getOrDefault("reactivated", 0));
+            result.setSignalements((java.util.List<Signalement>) report.getOrDefault("all_signalements", signalementService.getAll()));
+            result.setProblemes((java.util.List<Probleme>) report.getOrDefault("all_problemes", problemeService.getAll()));
 
             return result;
         } catch (Exception e) {

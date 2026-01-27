@@ -54,7 +54,7 @@ public class UserService {
             UserHistory history = new UserHistory();
             history.setUser(user);
             
-            history.setDescription(note != null && !note.isEmpty() ? note : "Déblocage manuel par administrateur");
+            //history.setDescription(note != null && !note.isEmpty() ? note : "Déblocage manuel par administrateur");
             history.setChangedAt(LocalDateTime.now());
             history.setStatus(STATUS_ACCOUNT_UNLOCKED); 
 
