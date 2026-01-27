@@ -12,9 +12,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -37,6 +39,34 @@ public class UserController {
         } catch (Exception e) {
             logger.error("Unexpected error deblockUser id={}", id, e);
             return new ApiResponse(false, "Erreur serveur lors du déblocage de l'utilisateur", null);
+        }
+    }
+
+    @GetMapping("/sync/block")
+    public ApiResponse syncBlockedUsersFromFirebase() {
+        try {
+            List<UserHistory> histories = userService.getDatasFromFirebase();
+            return new ApiResponse(true, "Synchronisation des utilisateurs bloqués depuis Firebase terminée", histories);
+        } catch (ServiceException se) {
+            logger.error("ServiceException syncBlockedUsersFromFirebase", se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error syncBlockedUsersFromFirebase", e);
+            return new ApiResponse(false, "Erreur serveur lors de la synchronisation des utilisateurs bloqués", null);
+        }
+    }
+
+    @GetMapping("/sync/unblock")
+    public ApiResponse syncUnblockedUsersToFirebase() {
+        try {
+            List<User> users = userService.syncUnblockedUserToFirebase();
+            return new ApiResponse(true, "Synchronisation des utilisateurs débloqués vers Firebase terminée", users);
+        } catch (ServiceException se) {
+            logger.error("ServiceException syncUnblockedUsersToFirebase", se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error syncUnblockedUsersToFirebase", e);
+            return new ApiResponse(false, "Erreur serveur lors de la synchronisation des utilisateurs débloqués", null);
         }
     }
 }

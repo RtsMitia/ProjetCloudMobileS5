@@ -7,6 +7,7 @@ import com.projet.lalana.repository.ProblemeHistoryRepository;
 import com.projet.lalana.model.ProblemeHistory;
 import com.projet.lalana.model.ProblemeStatus;
 import java.time.LocalDateTime;
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.transaction.Transactional;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
