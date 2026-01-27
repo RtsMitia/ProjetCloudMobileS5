@@ -238,7 +238,6 @@ public class AuthService {
         history.setUser(user);
         history.setStatus(STATUS_LOGIN_FAILED);
         history.setChangedAt(LocalDateTime.now());
-        history.setDescription("Tentative de connexion échouée");
         userHistoryRepository.save(history);
     }
     
@@ -250,7 +249,6 @@ public class AuthService {
         history.setUser(user);
         history.setStatus(STATUS_LOGIN_SUCCESS);
         history.setChangedAt(LocalDateTime.now());
-        history.setDescription("Connexion réussie");
         userHistoryRepository.save(history);
     }
     
@@ -262,7 +260,6 @@ public class AuthService {
         history.setUser(user);
         history.setStatus(STATUS_ACCOUNT_LOCKED);
         history.setChangedAt(LocalDateTime.now());
-        history.setDescription("Compte bloqué après " + maxLoginAttempts + " tentatives échouées");
         userHistoryRepository.save(history);
         System.out.println("Account locked for user: " + user.getEmail());
     }
@@ -275,7 +272,6 @@ public class AuthService {
         history.setUser(user);
         history.setStatus(STATUS_ACCOUNT_UNLOCKED);
         history.setChangedAt(LocalDateTime.now());
-        history.setDescription("Déblocage automatique après expiration du délai");
         userHistoryRepository.save(history);
         System.out.println("Account auto-unlocked for user: " + user.getEmail());
     }
