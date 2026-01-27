@@ -26,4 +26,9 @@ public class UserHistory {
 
     @Column(nullable = false)
     private Integer status;
+
+    public void setDescription(Object object) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setDescription'");
+    }
 }
