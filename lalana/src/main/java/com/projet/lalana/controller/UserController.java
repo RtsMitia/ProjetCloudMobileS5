@@ -27,6 +27,20 @@ public class UserController {
 
     private final UserService userService;
 
+    @GetMapping 
+    public ApiResponse getAllUsers() {
+        try {
+            List<User> users = userService.getAllUsers();
+            return new ApiResponse(true, "Liste des utilisateurs récupérée", users);
+        } catch (ServiceException se) {
+            logger.error("ServiceException getAllUsers", se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error getAllUsers", e);
+            return new ApiResponse(false, "Erreur serveur lors de la récupération des utilisateurs", null);
+        }
+    }
+
     @PostMapping("/{id}/deblock")
     public ApiResponse deblockUser(@PathVariable Integer id,
                                                    @RequestParam(required = false) String note) {

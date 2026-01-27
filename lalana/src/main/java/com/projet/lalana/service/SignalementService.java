@@ -1,12 +1,22 @@
 
 package com.projet.lalana.service;
 
+import com.projet.lalana.model.Entreprise;
+import com.projet.lalana.model.Probleme;
+import com.projet.lalana.model.ProblemeHistory;
+import com.projet.lalana.model.ProblemeStatus;
 import com.projet.lalana.model.Signalement;
 import com.projet.lalana.model.SignalementHistory;
 import com.projet.lalana.model.SignalementStatus;
+import com.projet.lalana.repository.EntrepriseRepository;
 import com.projet.lalana.repository.SignalementHistoryRepository;
 import com.projet.lalana.repository.SignalementRepository;
 import com.projet.lalana.repository.SignalementStatusRepository;
+import com.projet.lalana.repository.ProblemeHistoryRepository;
+import com.projet.lalana.repository.ProblemeRepository;
+import com.projet.lalana.repository.ProblemeStatusRepository;
+
+import com.projet.lalana.dto.RapportTech;
 
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentSnapshot;
@@ -15,13 +25,17 @@ import com.projet.lalana.dto.SignalementDto;
 import com.projet.lalana.model.Point;
 import com.projet.lalana.repository.PointRepository;
 import com.projet.lalana.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+
+import sun.misc.Signal;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +49,10 @@ public class SignalementService {
     private final FirestoreService firestoreService;
     private final PointRepository pointRepository;
     private final UserRepository userRepository;
+    private final ProblemeRepository problemeRepository;
+    private final ProblemeHistoryRepository problemeHistoryRepository;
+    private final ProblemeStatusRepository problemeStatusRepository;
+    private final EntrepriseRepository entrepriseRepository;
 
     public List<Signalement> getAll() {
         try {
@@ -225,5 +243,43 @@ public class SignalementService {
 
         return imported;
     }
-    
+
+
+
+    public Probleme rapportTechnicien(RapportTech rapportTech) {
+        Probleme probleme = null ;
+
+        try {
+            Signalement signalement = getById(rapportTech.getSignalementId())
+                .orElseThrow(() -> new ServiceException("Signalement non trouvé pour l'ID: " + rapportTech.getSignalementId()));
+            Entreprise entreprise = entrepriseRepository.findById(rapportTech.getEntrepriseId())
+                .orElseThrow(() -> new ServiceException("Entreprise non trouvée pour l'ID: " + rapportTech.getEntrepriseId()));
+            ProblemeStatus status = problemeStatusRepository.findByValeur(20)
+                .orElseThrow(() -> new ServiceException("Statut initial du problème non trouvé"));
+            SignalementStatus signalementStatus = statusSignalementRepository.findByValeur(30)
+                .orElseThrow(() -> new ServiceException("Statut 'En cours de traitement' non trouvé"));
+
+            probleme = new Probleme();
+            probleme.setSignalement(signalement);
+            probleme.setSurface(rapportTech.getSurface());
+            probleme.setBudgetEstime(rapportTech.getBudgetEstime());
+            probleme.setEntreprise(entreprise);
+            probleme.setProblemeStatus(status);
+            probleme.setFirestoreSynced(false);
+
+            signalement.setStatus(signalementStatus);
+            signalement.setFirestoreSynced(false);
+
+            signalementRepository.save(signalement);
+            probleme = problemeRepository.save(probleme);
+
+        
+        } catch (Exception e) {
+            logger.error("Erreur rapport technicien", e);
+            throw new ServiceException("Erreur rapport technicien", e);
+        }
+
+        return probleme;
+    }
+
 }
