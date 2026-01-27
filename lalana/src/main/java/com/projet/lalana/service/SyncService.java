@@ -19,6 +19,11 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.projet.lalana.model.UserHistory;
+import com.projet.lalana.service.UserService;
 
 @Service
 @RequiredArgsConstructor
@@ -26,15 +31,84 @@ public class SyncService {
 
     private final SignalementRepository signalementRepository;
     private final ProblemeRepository problemeRepository;
+    private final SignalementService signalementService;
+    private final ProblemeService problemeService;
+    private final UserService userService;
+
+    private static final Logger logger = LoggerFactory.getLogger(SyncService.class);
 
     /**
      * Sync only unsynced signalements with status_id = 1 to Firestore using SignalementDto.
      */
     public Map<String, Object> syncAll() {
+        // For backward compatibility keep syncAll as a lightweight push->firestore helper
         Map<String, Object> result = new HashMap<>();
-        result.put("signalements", syncSignalements());
+        result.put("pushed_signalements", syncSignalements());
         result.put("deleted_signalements", deleteSignalementsValeur30());
         result.put("deleted_problemes", deleteProblemesValeur30());
+        return result;
+    }
+
+    /**
+     * Run a full synchronization cycle combining both sync directions and user syncs.
+     * - push local signalements to Firestore
+     * - remove Firestore docs with valeur=30
+     * - import signalements from Firestore into local DB (signalementService.synchronisation())
+     * - sync disabled Firebase users -> local (user histories) and delete unmatched Firebase users
+     * - push local unblocked users -> Firebase
+     * Returns a map with detailed counts and snapshots.
+     */
+    @Transactional
+    public Map<String, Object> runFullSyncCycle() {
+        Map<String, Object> result = new HashMap<>();
+
+        // 1) push local -> Firestore
+        int pushed = syncSignalements();
+        result.put("pushed_signalements", pushed);
+
+        // 2) cleanup firestore
+        int delSig = deleteSignalementsValeur30();
+        int delProb = deleteProblemesValeur30();
+        result.put("deleted_signalements", delSig);
+        result.put("deleted_problemes", delProb);
+
+        // 3) import firestore -> local
+        int imported = 0;
+        try {
+            imported = signalementService.synchronisation();
+        } catch (Exception e) {
+            logger.error("Failed to import signalements from Firestore", e);
+        }
+        result.put("imported_signalements", imported);
+
+        // 4) users: firebase -> local (blocked)
+        List<UserHistory> blockedHistories = null;
+        try {
+            blockedHistories = userService.getDatasFromFirebase();
+            result.put("blocked_histories", blockedHistories != null ? blockedHistories.size() : 0);
+        } catch (Exception e) {
+            logger.error("Failed to sync blocked users from Firebase to local", e);
+            result.put("blocked_histories", 0);
+        }
+
+        // 5) users: local -> firebase (reactivate)
+        List<com.projet.lalana.model.User> reactivated = null;
+        try {
+            reactivated = userService.syncUnblockedUserToFirebase();
+            result.put("reactivated", reactivated != null ? reactivated.size() : 0);
+        } catch (Exception e) {
+            logger.error("Failed to push unblocked users to Firebase", e);
+            result.put("reactivated", 0);
+        }
+
+        // 6) snapshots
+        try {
+            result.put("all_signalements", signalementService.getAll());
+        } catch (Exception ignored) {}
+        try {
+            result.put("all_problemes", problemeService.getAll());
+        } catch (Exception ignored) {}
+
         return result;
     }
 
@@ -62,7 +136,8 @@ public class SyncService {
                 DocumentReference ref = db.collection("signalements").document(docId);
                 ApiFuture<WriteResult> w = ref.set(doc);
                 w.get();
-                // do not modify firestore_synced field for now
+                // mark local signalement as synced so it won't be re-synced
+                markSignalementSynced(s.getId());
                 count++;
             } catch (Exception e) {
                 System.out.println("Failed to sync signalement id=" + s.getId() + " : " + e.getMessage());
@@ -114,4 +189,65 @@ public class SyncService {
     }
 
 
+
+    @Transactional
+    public SyncResult fullSync() {
+        try {
+            // 1) Import signalements from Firestore
+            int importedSignalements = signalementService.synchronisation();
+
+            // 2) Sync blocked users from Firebase into local DB (creates UserHistory entries)
+            List<UserHistory> blockedHistories = userService.getDatasFromFirebase();
+
+            // 3) Push local unblocked users back to Firebase
+            List<com.projet.lalana.model.User> reactivated = userService.syncUnblockedUserToFirebase();
+
+            // 4) Prepare current snapshots to return
+            List<Signalement> allSignalements = signalementService.getAll();
+            List<Probleme> allProblemes = problemeService.getAll();
+
+            SyncResult result = new SyncResult();
+            result.setImportedSignalements(importedSignalements);
+            result.setBlockedCount(blockedHistories != null ? blockedHistories.size() : 0);
+            result.setReactivatedCount(reactivated != null ? reactivated.size() : 0);
+            result.setSignalements(allSignalements);
+            result.setProblemes(allProblemes);
+
+            return result;
+        } catch (Exception e) {
+            throw new ServiceException("Erreur lors de la synchronisation générale", e);
+        }
+    }
+
+    
+
+    @Transactional
+    protected void markSignalementSynced(Integer id) {
+        Signalement s = signalementRepository.findById(id).orElseThrow(() -> new RuntimeException("Signalement not found " + id));
+        s.setFirestoreSynced(true);
+        signalementRepository.save(s);
+    }
+
+    public static class SyncResult {
+        private int importedSignalements;
+        private int blockedCount;
+        private int reactivatedCount;
+        private List<Signalement> signalements;
+        private List<Probleme> problemes;
+
+        public int getImportedSignalements() { return importedSignalements; }
+        public void setImportedSignalements(int importedSignalements) { this.importedSignalements = importedSignalements; }
+
+        public int getBlockedCount() { return blockedCount; }
+        public void setBlockedCount(int blockedCount) { this.blockedCount = blockedCount; }
+
+        public int getReactivatedCount() { return reactivatedCount; }
+        public void setReactivatedCount(int reactivatedCount) { this.reactivatedCount = reactivatedCount; }
+
+        public List<Signalement> getSignalements() { return signalements; }
+        public void setSignalements(List<Signalement> signalements) { this.signalements = signalements; }
+
+        public List<Probleme> getProblemes() { return problemes; }
+        public void setProblemes(List<Probleme> problemes) { this.problemes = problemes; }
+    }
 }

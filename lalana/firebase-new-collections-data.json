@@ -1,0 +1,120 @@
+{
+    "signalementAdd": [
+        {
+            "id": null,
+            "userId": "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
+            "userEmail": "user1@gmail.com",
+            "description": "Route dégradée nécessitant une intervention urgente",
+            "x": 47.5220,
+            "y": -18.8680,
+            "localisation": "Route Nationale 3, Ambatobe",
+            "statusLibelle": "En attente",
+            "createdAt": "2026-01-26T10:30:00Z"
+        },
+        {
+            "id": null,
+            "userId": "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
+            "userEmail": "user2@gmail.com",
+            "description": "Nid-de-poule profond sur la voie principale",
+            "x": 47.5050,
+            "y": -18.8850,
+            "localisation": "Avenue Gal Gabriel Ramanantsoa",
+            "statusLibelle": "En cours",
+            "createdAt": "2026-01-26T09:15:00Z"
+        }
+    ],
+    "problemes": [
+        {
+            "id": null,
+            "surface": 80,
+            "budgetEstime": 50000,
+            "entrepriseId": null,
+            "entrepriseName": null,
+            "entrepriseContact": null,
+            "statusId": 12,
+            "statusNom": "Ouvert",
+            "statusValeur": 10,
+            "signalementId": 6,
+            "userId": 106,
+            "userEmail": "user6@gmail.com",
+            "x": 47.5050,
+            "y": -18.8950,
+            "localisation": "Behoririka, Antananarivo",
+            "description": "Panneau de stop renversé",
+            "statusLibelle": "Problème Ouvert",
+            "createdAt": "2026-01-26T08:00:00Z"
+        },
+        {
+            "id": null,
+            "surface": 120,
+            "budgetEstime": 75000,
+            "entrepriseId": 5,
+            "entrepriseName": "Routes & Travaux SA",
+            "entrepriseContact": "+261 34 12 345 67",
+            "statusId": 13,
+            "statusNom": "En cours",
+            "statusValeur": 45,
+            "signalementId": 8,
+            "userId": 107,
+            "userEmail": "user7@gmail.com",
+            "x": 47.5100,
+            "y": -18.8800,
+            "localisation": "Boulevard de Madagascar",
+            "description": "Réfection complète de la chaussée nécessaire",
+            "statusLibelle": "Travaux en cours",
+            "createdAt": "2026-01-25T14:30:00Z"
+        },
+        {
+            "id": null,
+            "surface": 50,
+            "budgetEstime": 30000,
+            "entrepriseId": 3,
+            "entrepriseName": "BTP Madagascar",
+            "entrepriseContact": "+261 33 98 765 43",
+            "statusId": 14,
+            "statusNom": "Terminé",
+            "statusValeur": 100,
+            "signalementId": 3,
+            "userId": 105,
+            "userEmail": "user5@gmail.com",
+            "x": 47.5150,
+            "y": -18.8820,
+            "localisation": "Carrefour Analakely",
+            "description": "Réparation du trottoir complétée",
+            "statusLibelle": "Travaux terminés",
+            "createdAt": "2026-01-20T11:00:00Z"
+        }
+    ],
+    "instructions": {
+        "title": "Instructions pour importer dans Firestore",
+        "collections": [
+            {
+                "name": "signalementListe",
+                "description": "Collection renommée (anciennement 'signalements'). Contient la liste des signalements existants."
+            },
+            {
+                "name": "signalementAdd",
+                "description": "Nouvelle collection pour les signalements à ajouter. Même format que signalementListe."
+            },
+            {
+                "name": "problemes",
+                "description": "Nouvelle collection pour les problèmes identifiés par les managers, avec informations d'entreprise et budget."
+            }
+        ],
+        "steps": [
+            "1. Ouvrir la console Firebase: https://console.firebase.google.com",
+            "2. Sélectionner votre projet",
+            "3. Aller dans 'Firestore Database'",
+            "4. IMPORTANT: Renommer la collection 'signalements' en 'signalementListe'",
+            "5. Créer une nouvelle collection 'signalementAdd'",
+            "6. Créer une nouvelle collection 'problemes'",
+            "7. Pour chaque collection, importer les données correspondantes",
+            "8. Laisser Firebase générer un ID automatique pour chaque document",
+            "9. Pour 'createdAt', utiliser le type 'timestamp' et convertir la date ISO"
+        ],
+        "format_notes": {
+            "signalementAdd": "Même format que signalementListe: id (null), userId, userEmail, x, y, localisation, description, statusLibelle, createdAt",
+            "problemes": "Format: id (null), surface, budgetEstime, entrepriseId, entrepriseName, entrepriseContact, statusId, statusNom, statusValeur, signalementId, userId, userEmail, x, y, localisation, description, statusLibelle, createdAt"
+        }
+    }
+}

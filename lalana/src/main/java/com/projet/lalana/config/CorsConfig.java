@@ -10,7 +10,13 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:5173")
+                .allowedOrigins(
+                        "http://localhost:5173", // Vite dev server
+                        "http://localhost:8100", // Ionic dev server
+                        "capacitor://localhost", // Capacitor iOS
+                        "http://localhost", // Capacitor Android
+                        "ionic://localhost" // Ionic serve
+                )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
