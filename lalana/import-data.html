@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Données Test - Lalana</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            color: #1e40af;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        button {
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        button:hover:not(:disabled) {
+            background: #2a2a2a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .log {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+
+        .success {
+            color: #10b981;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .info {
+            color: #3b82f6;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📊 Import Données Test</h1>
+        <p class="subtitle">Application Lalana - Signalements Routiers</p>
+
+        <div class="info-box">
+            <p>
+                <strong>ℹ️ Information :</strong> Ce script va importer 10 signalements de test dans Firestore.
+                Assurez-vous d'avoir une connexion Internet active.
+            </p>
+        </div>
+
+        <button id="importBtn" onclick="importData()">
+            🚀 Importer les données
+        </button>
+
+        <button id="clearBtn" onclick="clearData()" style="background: #ef4444; display: none;">
+            🗑️ Supprimer toutes les données
+        </button>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-box">
+                <div class="stat-number" id="totalCount">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number success" id="successCount">0</div>
+                <div class="stat-label">Succès</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number error" id="errorCount">0</div>
+                <div class="stat-label">Erreurs</div>
+            </div>
+        </div>
+
+        <div id="log" class="log" style="display: none;"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, Timestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAl61XlAUcuspotTSFl35BLECsU959AEa8",
+            authDomain: "cloud-lalana.firebaseapp.com",
+            projectId: "cloud-lalana",
+            storageBucket: "cloud-lalana.firebasestorage.app",
+            messagingSenderId: "45207388578",
+            appId: "1:45207388578:web:b7df253b27fd209ed232fb",
+            measurementId: "G-0QQR8MX66D"
+        };
+
+        // Initialiser Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Données de test
+        const testData = {
+            signalements: [
+                {
+                    userId: "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
+                    description: "Nid-de-poule important sur la route principale. Risque de dommage pour les véhicules.",
+                    location: { x: 47.5079, y: -18.8792, localisation: "Avenue de l'Indépendance, Antananarivo" },
+                    status: { nom: "En attente", description: "En attente de validation" },
+                    createdAt: "2026-01-15T08:30:00Z"
+                },
+                {
+                    userId: "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
+                    description: "Route complètement dégradée après les pluies. Circulation difficile.",
+                    location: { x: 47.5120, y: -18.8750, localisation: "Route de Ivato" },
+                    status: { nom: "En cours", description: "Travaux en cours" },
+                    createdAt: "2026-01-14T14:20:00Z"
+                },
+                {
+                    userId: "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
+                    description: "Signalisation manquante au carrefour. Risque d'accident.",
+                    location: { x: 47.5150, y: -18.8820, localisation: "Carrefour Analakely" },
+                    status: { nom: "Résolu", description: "Problème résolu" },
+                    createdAt: "2026-01-10T10:15:00Z"
+                },
+                {
+                    userId: "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
+                    description: "Trottoir cassé devant l'école. Danger pour les enfants.",
+                    location: { x: 47.5200, y: -18.8700, localisation: "Rue de l'École, Ankorondrano" },
+                    status: { nom: "En attente", description: "En attente de validation" },
+                    createdAt: "2026-01-18T09:00:00Z"
+                },
+                {
+                    userId: "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
+                    description: "Fuite d'eau importante qui endommage la chaussée.",
+                    location: { x: 47.5050, y: -18.8850, localisation: "Avenue Gal Gabriel Ramanantsoa" },
+                    status: { nom: "En cours", description: "Intervention en cours" },
+                    createdAt: "2026-01-16T11:45:00Z"
+                },
+                {
+                    userId: "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
+                    description: "Éclairage public défaillant. Zone dangereuse la nuit.",
+                    location: { x: 47.5100, y: -18.8780, localisation: "Boulevard de Madagascar" },
+                    status: { nom: "En attente", description: "En attente de validation" },
+                    createdAt: "2026-01-17T16:30:00Z"
+                },
+                {
+                    userId: "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
+                    description: "Réparation du pont terminée. Accès à nouveau sécurisé.",
+                    location: { x: 47.5180, y: -18.8730, localisation: "Pont d'Ambohijatovo" },
+                    status: { nom: "Résolu", description: "Travaux terminés" },
+                    createdAt: "2026-01-12T13:00:00Z"
+                },
+                {
+                    userId: "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
+                    description: "Glissière de sécurité endommagée après un accident.",
+                    location: { x: 47.5220, y: -18.8680, localisation: "Route Nationale 3, Ambatobe" },
+                    status: { nom: "En cours", description: "Réparation planifiée" },
+                    createdAt: "2026-01-19T07:20:00Z"
+                },
+                {
+                    userId: "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
+                    description: "Bouche d'égout sans couvercle. Très dangereux !",
+                    location: { x: 47.5030, y: -18.8810, localisation: "Rue Rainibetsimisaraka" },
+                    status: { nom: "En attente", description: "Signalement reçu" },
+                    createdAt: "2026-01-20T08:00:00Z"
+                },
+                {
+                    userId: "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
+                    description: "Travaux de réfection de la chaussée achevés.",
+                    location: { x: 47.5160, y: -18.8760, localisation: "Avenue de l'Indépendance" },
+                    status: { nom: "Résolu", description: "Chaussée refaite" },
+                    createdAt: "2026-01-11T15:30:00Z"
+                }
+            ]
+        };
+
+        // Fonctions globales
+        window.importData = async function () {
+            const btn = document.getElementById('importBtn');
+            const logDiv = document.getElementById('log');
+            const statsDiv = document.getElementById('stats');
+            const clearBtn = document.getElementById('clearBtn');
+
+            btn.disabled = true;
+            logDiv.style.display = 'block';
+            statsDiv.style.display = 'grid';
+            logDiv.innerHTML = '';
+
+            let successCount = 0;
+            let errorCount = 0;
+
+            addLog('🚀 Début de l\'import des données...', 'info');
+
+            for (const signalement of testData.signalements) {
+                try {
+                    const data = {
+                        ...signalement,
+                        createdAt: Timestamp.fromDate(new Date(signalement.createdAt))
+                    };
+
+                    const docRef = await addDoc(collection(db, 'signalements'), data);
+                    successCount++;
+
+                    updateStats(testData.signalements.length, successCount, errorCount);
+                    addLog(`✓ [${docRef.id}] ${signalement.description.substring(0, 50)}...`, 'success');
+                } catch (error) {
+                    errorCount++;
+                    updateStats(testData.signalements.length, successCount, errorCount);
+                    addLog(`✗ Erreur: ${error.message}`, 'error');
+                }
+            }
+
+            addLog(`\n📊 Import terminé: ${successCount} succès, ${errorCount} erreurs`, successCount > 0 ? 'success' : 'error');
+            btn.disabled = false;
+            clearBtn.style.display = 'block';
+        };
+
+        window.clearData = async function () {
+            if (!confirm('⚠️ Voulez-vous vraiment supprimer TOUS les signalements ?')) {
+                return;
+            }
+
+            const logDiv = document.getElementById('log');
+            const btn = document.getElementById('clearBtn');
+
+            btn.disabled = true;
+            addLog('\n🗑️ Suppression en cours...', 'warning');
+
+            try {
+                const snapshot = await getDocs(collection(db, 'signalements'));
+                let count = 0;
+
+                for (const doc of snapshot.docs) {
+                    await deleteDoc(doc.ref);
+                    count++;
+                    addLog(`✓ Supprimé: ${doc.id}`, 'warning');
+                }
+
+                addLog(`\n✅ ${count} signalements supprimés`, 'success');
+                updateStats(0, 0, 0);
+            } catch (error) {
+                addLog(`✗ Erreur: ${error.message}`, 'error');
+            }
+
+            btn.disabled = false;
+        };
+
+        function addLog(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = message;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStats(total, success, errors) {
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('successCount').textContent = success;
+            document.getElementById('errorCount').textContent = errors;
+        }
+    </script>
+</body>
+
+</html>

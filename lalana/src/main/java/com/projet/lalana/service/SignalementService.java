@@ -151,11 +151,7 @@ public class SignalementService {
         try { return Double.parseDouble(o.toString()); } catch (Exception ex) { return null; }
     }
 
-    /**
-     * Synchronise les signalements depuis Firestore vers la base locale.
-     * Méthode idempotente : les documents déjà importés (même firestore doc id) sont ignorés.
-     * Retourne le nombre de nouveaux enregistrements importés.
-     */
+
     public int synchronisation() {
         int imported = 0;
         try {

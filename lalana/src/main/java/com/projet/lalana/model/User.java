@@ -21,4 +21,10 @@ public class User {
 
     @Column(length = 255, nullable = false)
     private String password;
+
+    @Column(name = "firebase_token", length = 255)
+    private String firebaseToken;
+
+    @Column(name = "current_status")
+    private Integer currentStatus = -1;
 }
