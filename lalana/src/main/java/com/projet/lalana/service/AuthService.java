@@ -250,7 +250,7 @@ public class AuthService {
         history.setUser(user);
         history.setStatus(STATUS_LOGIN_SUCCESS);
         history.setChangedAt(LocalDateTime.now());
-        //history.setDescription("Connexion réussie");
+
         userHistoryRepository.save(history);
     }
     

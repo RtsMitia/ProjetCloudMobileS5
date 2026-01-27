@@ -34,6 +34,9 @@ public class UserService {
     // Status codes for UserHistory (should match AuthService constants)
     private static final int STATUS_ACCOUNT_UNLOCKED = 4;
 
+    private final int UNBLOCKED_STATUS = 1;
+    private final int BLOCKED_STATUS = 0;
+
     private final UserRepository userRepository;
     private final UserHistoryRepository userHistoryRepository;
     private final AuthService authService;
@@ -56,12 +59,12 @@ public class UserService {
             
             //history.setDescription(note != null && !note.isEmpty() ? note : "Déblocage manuel par administrateur");
             history.setChangedAt(LocalDateTime.now());
-            history.setStatus(STATUS_ACCOUNT_UNLOCKED); 
+            history.setStatus(UNBLOCKED_STATUS); 
 
             UserHistory saved = userHistoryRepository.save(history);
             
             // Denormalize: set currentStatus on user
-            user.setCurrentStatus(1);
+            user.setCurrentStatus(UNBLOCKED_STATUS);
             userRepository.save(user);
             
             logger.info("User {} débloqué, history id={}", userId, saved.getId());
@@ -146,7 +149,6 @@ public class UserService {
                     Optional<UserHistory> last = userHistoryRepository.findTopByUserOrderByChangedAtDesc(user);
                     int lastStatus = last.map(UserHistory::getStatus).orElse(-1);
 
-                    final int BLOCKED_STATUS = 0;
                     if (lastStatus != BLOCKED_STATUS) {
                         UserHistory history = new UserHistory();
                         history.setUser(user);
@@ -190,7 +192,7 @@ public class UserService {
                     // Use denormalized currentStatus for faster check
                     Integer currentStatus = user.getCurrentStatus() != null ? user.getCurrentStatus() : -1;
 
-                    final int UNBLOCKED_STATUS = 1;
+               
                     if (currentStatus == UNBLOCKED_STATUS) {
                         try {
                             firebaseService.getAuth().updateUser(
@@ -202,7 +204,7 @@ public class UserService {
                         } catch (Exception e) {
                             logger.error("Erreur lors de l'activation Firebase pour uid={}", user.getFirebaseToken(), e);
                         }
-                    }
+                    } 
                 } catch (Exception e) {
                     logger.error("Erreur lors du traitement de l'utilisateur local id={}", user.getId(), e);
                 }
@@ -212,6 +214,15 @@ public class UserService {
         } catch (Exception e) {
             logger.error("Erreur lors de la synchronisation des utilisateurs vers Firebase", e);
             throw new ServiceException("Erreur lors de la synchronisation vers Firebase", e);
+        }
+    }
+
+    public List<User> getAllUsers() {
+        try {
+            return userRepository.findAll();
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération des utilisateurs", e);
+            throw new ServiceException("Erreur lors de la récupération des utilisateurs", e);
         }
     }
 
