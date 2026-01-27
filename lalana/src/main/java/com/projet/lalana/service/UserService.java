@@ -30,19 +30,12 @@ import java.util.Optional;
 public class UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-    
-    // Status codes for UserHistory (should match AuthService constants)
-    private static final int STATUS_ACCOUNT_UNLOCKED = 4;
 
     private final UserRepository userRepository;
     private final UserHistoryRepository userHistoryRepository;
     private final AuthService authService;
     private final FirebaseService firebaseService;
 
-    /**
-     * Unblock a user account manually via API
-     * This clears any lock status and allows the user to login again
-     */
     public UserHistory deblockUser(Integer userId, String note) {
         try {
             Optional<User> uopt = userRepository.findById(userId);
@@ -54,9 +47,8 @@ public class UserService {
             UserHistory history = new UserHistory();
             history.setUser(user);
             
-            history.setDescription(note != null && !note.isEmpty() ? note : "Déblocage manuel par administrateur");
             history.setChangedAt(LocalDateTime.now());
-            history.setStatus(STATUS_ACCOUNT_UNLOCKED); 
+            history.setStatus(1); 
 
             UserHistory saved = userHistoryRepository.save(history);
             
@@ -112,10 +104,22 @@ public class UserService {
                     }
 
                     Optional<User> uopt = userRepository.findByEmail(email);
-                    if (uopt.isEmpty()) {
+                        if (uopt.isEmpty()) {
+                            // If no corresponding local user exists, remove the user from Firebase
+                            String fuUid = fu.getUid();
+                            if (fuUid != null && !fuUid.isEmpty()) {
+                                try {
+                                    firebaseService.getAuth().deleteUser(fuUid);
+                                    logger.info("Supprimé l'utilisateur Firebase uid={} car aucun utilisateur local trouvé pour email={}", fuUid, email);
+                                } catch (Exception e) {
+                                    logger.error("Impossible de supprimer l'utilisateur Firebase uid={}", fuUid, e);
+                                }
+                            } else {
+                                logger.warn("Utilisateur Firebase sans uid trouvé pour email={}; impossible de supprimer", email);
+                            }
 
-                        continue;
-                    }
+                            continue;
+                        }
 
                     User user = uopt.get();
 

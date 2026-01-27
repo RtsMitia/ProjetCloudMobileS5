@@ -1,5 +1,5 @@
 {
-  "signalements": [
+  "signalementListe": [
     {
       "id": null,
       "userId": "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
@@ -107,8 +107,8 @@
       "1. Ouvrir la console Firebase: https://console.firebase.google.com",
       "2. Sélectionner votre projet",
       "3. Aller dans 'Firestore Database'",
-      "4. Créer une collection 'signalements' si elle n'existe pas",
-      "5. Pour chaque objet dans le tableau 'signalements', cliquer sur 'Ajouter un document'",
+      "4. Créer une collection 'signalementListe' si elle n'existe pas",
+      "5. Pour chaque objet dans le tableau 'signalementListe', cliquer sur 'Ajouter un document'",
       "6. Laisser Firebase générer un ID automatique",
       "7. NOUVEAU FORMAT: Les champs sont maintenant 'flat' (non imbriqués)",
       "8. Copier les champs: userId, description, x, y, localisation, statusLibelle, createdAt",
