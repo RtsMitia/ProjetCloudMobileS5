@@ -21,7 +21,7 @@ public class FirestoreService {
         List<DocumentSnapshot> result = new ArrayList<>();
         Firestore db = FirestoreClient.getFirestore();
         try {
-            ApiFuture<QuerySnapshot> query = db.collection("signalements_add").get();
+            ApiFuture<QuerySnapshot> query = db.collection("signalementAdd").get();
             QuerySnapshot querySnapshot = query.get();
             if (querySnapshot != null) {
                 result.addAll(querySnapshot.getDocuments());

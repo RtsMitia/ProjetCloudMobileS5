@@ -133,7 +133,7 @@ public class SyncService {
             doc.put("valeur", dto.getValeur());
 
             try {
-                DocumentReference ref = db.collection("signalements").document(docId);
+                DocumentReference ref = db.collection("signalementListe").document(docId);
                 ApiFuture<WriteResult> w = ref.set(doc);
                 w.get();
                 // mark local signalement as synced so it won't be re-synced
@@ -150,7 +150,7 @@ public class SyncService {
         int deleted = 0;
         Firestore db = FirestoreClient.getFirestore();
         try {
-            ApiFuture<QuerySnapshot> future = db.collection("signalements").whereEqualTo("valeur", 30).get();
+            ApiFuture<QuerySnapshot> future = db.collection("signalementListe").whereEqualTo("valeur", 30).get();
             QuerySnapshot querySnapshot = future.get();
             for (QueryDocumentSnapshot doc : querySnapshot.getDocuments()) {
                 try {

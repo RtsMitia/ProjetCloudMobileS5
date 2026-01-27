@@ -47,18 +47,20 @@ async function importSignalements() {
     let count = 0;
     let errors = 0;
 
-    for (const signalement of testData.signalements) {
+    for (const signalement of testData.signalementListe) {
         try {
             // Convertir la date ISO en Timestamp Firestore
             const data = {
                 userId: signalement.userId,
                 description: signalement.description,
-                location: signalement.location,
-                status: signalement.status,
+                x: signalement.x,
+                y: signalement.y,
+                localisation: signalement.localisation,
+                statusLibelle: signalement.statusLibelle,
                 createdAt: Timestamp.fromDate(new Date(signalement.createdAt))
             };
 
-            const docRef = await addDoc(collection(db, 'signalements'), data);
+            const docRef = await addDoc(collection(db, 'signalementListe'), data);
             count++;
 
             console.log(`✓ Importé [${docRef.id}]: ${signalement.description.substring(0, 50)}...`);

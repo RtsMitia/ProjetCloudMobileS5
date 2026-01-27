@@ -28,6 +28,7 @@ CREATE TABLE users_history (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id),
     changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    description VARCHAR(100),
     status INTEGER NOT NULL
 );
 
