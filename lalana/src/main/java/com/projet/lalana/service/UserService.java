@@ -104,10 +104,22 @@ public class UserService {
                     }
 
                     Optional<User> uopt = userRepository.findByEmail(email);
-                    if (uopt.isEmpty()) {
+                        if (uopt.isEmpty()) {
+                            // If no corresponding local user exists, remove the user from Firebase
+                            String fuUid = fu.getUid();
+                            if (fuUid != null && !fuUid.isEmpty()) {
+                                try {
+                                    firebaseService.getAuth().deleteUser(fuUid);
+                                    logger.info("Supprimé l'utilisateur Firebase uid={} car aucun utilisateur local trouvé pour email={}", fuUid, email);
+                                } catch (Exception e) {
+                                    logger.error("Impossible de supprimer l'utilisateur Firebase uid={}", fuUid, e);
+                                }
+                            } else {
+                                logger.warn("Utilisateur Firebase sans uid trouvé pour email={}; impossible de supprimer", email);
+                            }
 
-                        continue;
-                    }
+                            continue;
+                        }
 
                     User user = uopt.get();
 

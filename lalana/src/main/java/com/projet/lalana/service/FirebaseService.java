@@ -83,7 +83,7 @@ public class FirebaseService {
 
             // Detect escaped newlines in the private_key field (common when storing JSON in env vars)
             if (json.contains("\\\\n-----BEGIN PRIVATE KEY-----" ) || (json.contains("\\n-----BEGIN PRIVATE KEY-----") && !json.contains("\n-----BEGIN PRIVATE KEY-----"))) {
-                logger.warn("Detected escaped newlines in service account JSON private_key; attempting to fix by unescaping \\ sequences.");
+                    logger.warn("Detected escaped newlines in service account JSON private_key; attempting to fix by unescaping \"\\n\" sequences.");
                 json = json.replace("\\\\n", "\\n");
                 // Also replace literal \n sequences (backslash + n) with actual newlines
                 json = json.replace("\\n", "\n");

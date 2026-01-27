@@ -113,9 +113,5 @@ public class SyncService {
         return deleted;
     }
 
-    // kept for future use; intentionally no-op to avoid modifying firestore flag
-    @Transactional
-    protected void markSignalementSynced(Integer id) {
-        // no-op
-    }
+
 }
