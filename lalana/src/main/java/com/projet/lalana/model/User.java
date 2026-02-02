@@ -28,4 +28,6 @@ public class User {
     @Column(name = "current_status", columnDefinition = "INTEGER DEFAULT 1")
     private Integer currentStatus;
 
+    @Column(name = "firestore_synced")
+    private Boolean firestoreSynced = false;
 }

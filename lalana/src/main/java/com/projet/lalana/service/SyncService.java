@@ -62,15 +62,27 @@ public class SyncService {
     public Map<String, Object> runFullSyncCycle() {
         Map<String, Object> result = new HashMap<>();
 
-        // 1) push local -> Firestore
-        int pushed = syncSignalements();
-        result.put("pushed_signalements", pushed);
+        // 1) users: firebase -> local (blocked)
+        List<UserHistory> blockedHistories = null;
+        try {
+            blockedHistories = userService.getDatasFromFirebase();
+            result.put("blocked_histories", blockedHistories != null ? blockedHistories.size() : 0);
+        } catch (Exception e) {
+            logger.error("Failed to sync blocked users from Firebase to local", e);
+            result.put("blocked_histories", 0);
+        }
 
-        // 2) cleanup firestore
-        int delSig = deleteSignalementsValeur30();
-        int delProb = deleteProblemesValeur30();
-        result.put("deleted_signalements", delSig);
-        result.put("deleted_problemes", delProb);
+        // 2) users: local -> firebase (reactivate)
+        List<com.projet.lalana.model.User> reactivated = null;
+        try {
+            reactivated = userService.syncUnblockedUserToFirebase();
+            result.put("reactivated", reactivated != null ? reactivated.size() : 0);
+        } catch (Exception e) {
+            logger.error("Failed to push unblocked users to Firebase", e);
+            result.put("reactivated", 0);
+        }
+
+
 
         // 3) import firestore -> local
         int imported = 0;
@@ -81,26 +93,20 @@ public class SyncService {
         }
         result.put("imported_signalements", imported);
 
-        // 4) users: firebase -> local (blocked)
-        List<UserHistory> blockedHistories = null;
-        try {
-            blockedHistories = userService.getDatasFromFirebase();
-            result.put("blocked_histories", blockedHistories != null ? blockedHistories.size() : 0);
-        } catch (Exception e) {
-            logger.error("Failed to sync blocked users from Firebase to local", e);
-            result.put("blocked_histories", 0);
-        }
 
-        // 5) users: local -> firebase (reactivate)
-        List<com.projet.lalana.model.User> reactivated = null;
-        try {
-            reactivated = userService.syncUnblockedUserToFirebase();
-            result.put("reactivated", reactivated != null ? reactivated.size() : 0);
-        } catch (Exception e) {
-            logger.error("Failed to push unblocked users to Firebase", e);
-            result.put("reactivated", 0);
-        }
+        // 4) push local -> Firestore
+        int pushed = syncSignalements();
+        result.put("pushed_signalements", pushed);
 
+        // 5) cleanup firestore
+        int delSig = deleteSignalementsValeur30();
+        int delProb = deleteProblemesValeur30();
+        result.put("deleted_signalements", delSig);
+        result.put("deleted_problemes", delProb);
+
+
+
+        
         // 6) snapshots
         try {
             result.put("all_signalements", signalementService.getAll());

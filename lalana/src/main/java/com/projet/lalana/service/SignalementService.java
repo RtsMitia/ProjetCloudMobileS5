@@ -228,7 +228,7 @@ public class SignalementService {
                 List<DocumentSnapshot> docs = firestoreService.fetchAllSignalementDocuments();
                 for (DocumentSnapshot doc : docs) {
                     try {
-                        firestoreService.deleteDocument("signalements_problemes", doc.getId());
+                        firestoreService.deleteDocument("signalementAdd", doc.getId());
                     } catch (Exception exDel) {
                         logger.warn("Impossible de supprimer doc Firestore {}: {}", doc.getId(), exDel.getMessage());
                     }

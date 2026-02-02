@@ -1,0 +1,57 @@
+# Fichier de test HTTP pour créer / mettre à jour des utilisateurs via l'endpoint
+# Utiliser VS Code REST Client (extension) ou curl pour exécuter ces requêtes.
+
+### Mettre à jour / créer user id=1 (admin)
+POST http://localhost:8080/api/users/update/1
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "adminpass",
+  "currentStatus": 1,
+  "firebaseToken": ""
+}
+
+### Mettre à jour / créer user id=2 (user1)
+POST http://localhost:8080/api/users/update/2
+Content-Type: application/json
+
+{
+  "email": "user1@example.com",
+  "password": "userpass",
+  "currentStatus": 1,
+  "firebaseToken": ""
+}
+
+### Mettre à jour / créer user id=3 (user3 avec firebase token)
+POST http://localhost:8080/api/users/update/3
+Content-Type: application/json
+
+{
+  "email": "user3@test.com",
+  "password": "password123",
+  "currentStatus": 1,
+  "firebaseToken": "P2AV84q39wZFF4qehk4xeYcD6Fk1"
+}
+
+### Mettre à jour / créer user id=4 (user4)
+POST http://localhost:8080/api/users/update/4
+Content-Type: application/json
+
+{
+  "email": "user4@test.com",
+  "password": "password123",
+  "currentStatus": 1,
+  "firebaseToken": ""
+}
+
+### Mettre à jour / créer user id=5 (user5)
+POST http://localhost:8080/api/users/update/5
+Content-Type: application/json
+
+{
+  "email": "user5@test.com",
+  "password": "password123",
+  "currentStatus": 1,
+  "firebaseToken": ""
+}
