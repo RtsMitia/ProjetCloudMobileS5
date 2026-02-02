@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_history")
+@Table(name = "users_history")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,11 +22,13 @@ public class UserHistory {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
     private LocalDateTime changedAt;
 
     @Column(nullable = false)
     private Integer status;
+
+    public void setDescription(Object object) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setDescription'");
+    }
 }

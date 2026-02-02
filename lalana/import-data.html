@@ -164,6 +164,7 @@
         <button id="clearBtn" onclick="clearData()" style="background: #ef4444; display: none;">
             🗑️ Supprimer toutes les données
         </button>
+        <input id="fileInput" type="file" accept="application/json" style="display:none" />
 
         <div class="stats" id="stats" style="display: none;">
             <div class="stat-box">
@@ -190,94 +191,29 @@
 
         // Configuration Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyAl61XlAUcuspotTSFl35BLECsU959AEa8",
-            authDomain: "cloud-lalana.firebaseapp.com",
-            projectId: "cloud-lalana",
-            storageBucket: "cloud-lalana.firebasestorage.app",
-            messagingSenderId: "45207388578",
-            appId: "1:45207388578:web:b7df253b27fd209ed232fb",
-            measurementId: "G-0QQR8MX66D"
-        };
+
+            apiKey: "AIzaSyAux1vRChlG_x_aOTY5sEvZ0zk4QXl7YYA",
+
+            authDomain: "gestionroutiere-aaa53.firebaseapp.com",
+
+            databaseURL: "https://gestionroutiere-aaa53-default-rtdb.firebaseio.com",
+
+            projectId: "gestionroutiere-aaa53",
+
+            storageBucket: "gestionroutiere-aaa53.firebasestorage.app",
+
+            messagingSenderId: "997547144040",
+
+            appId: "1:997547144040:web:3a8b8de80842c006435cdd",
+
+            measurementId: "G-EHW0B3B9VF"
+
+            };
+
 
         // Initialiser Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
-        // Données de test
-        const testData = {
-            signalements: [
-                {
-                    userId: "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
-                    description: "Nid-de-poule important sur la route principale. Risque de dommage pour les véhicules.",
-                    location: { x: 47.5079, y: -18.8792, localisation: "Avenue de l'Indépendance, Antananarivo" },
-                    status: { nom: "En attente", description: "En attente de validation" },
-                    createdAt: "2026-01-15T08:30:00Z"
-                },
-                {
-                    userId: "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
-                    description: "Route complètement dégradée après les pluies. Circulation difficile.",
-                    location: { x: 47.5120, y: -18.8750, localisation: "Route de Ivato" },
-                    status: { nom: "En cours", description: "Travaux en cours" },
-                    createdAt: "2026-01-14T14:20:00Z"
-                },
-                {
-                    userId: "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
-                    description: "Signalisation manquante au carrefour. Risque d'accident.",
-                    location: { x: 47.5150, y: -18.8820, localisation: "Carrefour Analakely" },
-                    status: { nom: "Résolu", description: "Problème résolu" },
-                    createdAt: "2026-01-10T10:15:00Z"
-                },
-                {
-                    userId: "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
-                    description: "Trottoir cassé devant l'école. Danger pour les enfants.",
-                    location: { x: 47.5200, y: -18.8700, localisation: "Rue de l'École, Ankorondrano" },
-                    status: { nom: "En attente", description: "En attente de validation" },
-                    createdAt: "2026-01-18T09:00:00Z"
-                },
-                {
-                    userId: "ky1TD9wOKBXQCiRI7rFE8J6AeDU2",
-                    description: "Fuite d'eau importante qui endommage la chaussée.",
-                    location: { x: 47.5050, y: -18.8850, localisation: "Avenue Gal Gabriel Ramanantsoa" },
-                    status: { nom: "En cours", description: "Intervention en cours" },
-                    createdAt: "2026-01-16T11:45:00Z"
-                },
-                {
-                    userId: "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
-                    description: "Éclairage public défaillant. Zone dangereuse la nuit.",
-                    location: { x: 47.5100, y: -18.8780, localisation: "Boulevard de Madagascar" },
-                    status: { nom: "En attente", description: "En attente de validation" },
-                    createdAt: "2026-01-17T16:30:00Z"
-                },
-                {
-                    userId: "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
-                    description: "Réparation du pont terminée. Accès à nouveau sécurisé.",
-                    location: { x: 47.5180, y: -18.8730, localisation: "Pont d'Ambohijatovo" },
-                    status: { nom: "Résolu", description: "Travaux terminés" },
-                    createdAt: "2026-01-12T13:00:00Z"
-                },
-                {
-                    userId: "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
-                    description: "Glissière de sécurité endommagée après un accident.",
-                    location: { x: 47.5220, y: -18.8680, localisation: "Route Nationale 3, Ambatobe" },
-                    status: { nom: "En cours", description: "Réparation planifiée" },
-                    createdAt: "2026-01-19T07:20:00Z"
-                },
-                {
-                    userId: "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
-                    description: "Bouche d'égout sans couvercle. Très dangereux !",
-                    location: { x: 47.5030, y: -18.8810, localisation: "Rue Rainibetsimisaraka" },
-                    status: { nom: "En attente", description: "Signalement reçu" },
-                    createdAt: "2026-01-20T08:00:00Z"
-                },
-                {
-                    userId: "yvCY4MUHtYcn2JLnWozVyqWiD8T2",
-                    description: "Travaux de réfection de la chaussée achevés.",
-                    location: { x: 47.5160, y: -18.8760, localisation: "Avenue de l'Indépendance" },
-                    status: { nom: "Résolu", description: "Chaussée refaite" },
-                    createdAt: "2026-01-11T15:30:00Z"
-                }
-            ]
-        };
 
         // Fonctions globales
         window.importData = async function () {
@@ -296,21 +232,69 @@
 
             addLog('🚀 Début de l\'import des données...', 'info');
 
-            for (const signalement of testData.signalements) {
+            // Charger le fichier JSON de test
+            let dataJson;
+            try {
+                const resp = await fetch('firebase-test-data.json');
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                dataJson = await resp.json();
+            } catch (err) {
+                addLog(`✗ Impossible de charger firebase-test-data.json: ${err.message}`, 'error');
+                // Falling back to local file chooser (useful when opening via file://)
+                const fileInput = document.getElementById('fileInput');
+                fileInput.style.display = 'block';
+                addLog('👉 Choisissez manuellement le fichier JSON local (firebase-test-data.json).', 'info');
+                fileInput.onchange = async (e) => {
+                    const f = e.target.files && e.target.files[0];
+                    if (!f) {
+                        addLog('⚠️ Aucun fichier sélectionné.', 'warning');
+                        btn.disabled = false;
+                        return;
+                    }
+                    try {
+                        const text = await f.text();
+                        dataJson = JSON.parse(text);
+                        // hide file input after successful selection
+                        fileInput.style.display = 'none';
+                        await processAndImport(dataJson, btn);
+                    } catch (ex) {
+                        addLog(`✗ Erreur lecture/parse fichier: ${ex.message}`, 'error');
+                        btn.disabled = false;
+                    }
+                };
+                btn.disabled = false;
+                return;
+            }
+
+            // Supporter plusieurs clés possibles dans le JSON
+            const items = dataJson.signalementListe ?? dataJson.signalements ?? [];
+            if (!Array.isArray(items) || items.length === 0) {
+                addLog('⚠️ Aucun signalement trouvé dans firebase-test-data.json', 'warning');
+                btn.disabled = false;
+                return;
+            }
+
+            for (const signalement of items) {
                 try {
-                    const data = {
-                        ...signalement,
+                    // Mapper le format plat ou le format imbriqué vers le format attendu
+                    const doc = {
+                        userId: signalement.userId,
+                        description: signalement.description,
+                        x: signalement.x ?? (signalement.location && signalement.location.x),
+                        y: signalement.y ?? (signalement.location && signalement.location.y),
+                        localisation: signalement.localisation ?? (signalement.location && signalement.location.localisation),
+                        statusLibelle: signalement.statusLibelle ?? (signalement.status && signalement.status.nom),
                         createdAt: Timestamp.fromDate(new Date(signalement.createdAt))
                     };
 
-                    const docRef = await addDoc(collection(db, 'signalements'), data);
+                    const docRef = await addDoc(collection(db, 'signalementAdd'), doc);
                     successCount++;
 
-                    updateStats(testData.signalements.length, successCount, errorCount);
-                    addLog(`✓ [${docRef.id}] ${signalement.description.substring(0, 50)}...`, 'success');
+                    updateStats(items.length, successCount, errorCount);
+                    addLog(`✓ [${docRef.id}] ${String(signalement.description || '').substring(0, 50)}...`, 'success');
                 } catch (error) {
                     errorCount++;
-                    updateStats(testData.signalements.length, successCount, errorCount);
+                    updateStats(items.length, successCount, errorCount);
                     addLog(`✗ Erreur: ${error.message}`, 'error');
                 }
             }
@@ -319,6 +303,47 @@
             btn.disabled = false;
             clearBtn.style.display = 'block';
         };
+
+        // Extracted to allow reuse after selecting a local file
+        async function processAndImport(dataJson, btnRef) {
+            const items = dataJson.signalementListe ?? dataJson.signalements ?? [];
+            if (!Array.isArray(items) || items.length === 0) {
+                addLog('⚠️ Aucun signalement trouvé dans le fichier JSON.', 'warning');
+                return;
+            }
+
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (const signalement of items) {
+                try {
+                    const doc = {
+                        userId: signalement.userId,
+                        description: signalement.description,
+                        x: signalement.x ?? (signalement.location && signalement.location.x),
+                        y: signalement.y ?? (signalement.location && signalement.location.y),
+                        localisation: signalement.localisation ?? (signalement.location && signalement.location.localisation),
+                        statusLibelle: signalement.statusLibelle ?? (signalement.status && signalement.status.nom),
+                        createdAt: Timestamp.fromDate(new Date(signalement.createdAt))
+                    };
+
+                    const docRef = await addDoc(collection(db, 'signalementAdd'), doc);
+                    successCount++;
+                    updateStats(items.length, successCount, errorCount);
+                    addLog(`✓ [${docRef.id}] ${String(signalement.description || '').substring(0, 50)}...`, 'success');
+                } catch (error) {
+                    errorCount++;
+                    updateStats(items.length, successCount, errorCount);
+                    addLog(`✗ Erreur: ${error.message}`, 'error');
+                }
+            }
+
+            addLog(`\n📊 Import terminé: ${successCount} succès, ${errorCount} erreurs`, successCount > 0 ? 'success' : 'error');
+            if (btnRef) {
+                btnRef.disabled = false;
+                document.getElementById('clearBtn').style.display = 'block';
+            }
+        }
 
         window.clearData = async function () {
             if (!confirm('⚠️ Voulez-vous vraiment supprimer TOUS les signalements ?')) {
@@ -332,7 +357,7 @@
             addLog('\n🗑️ Suppression en cours...', 'warning');
 
             try {
-                const snapshot = await getDocs(collection(db, 'signalements'));
+                const snapshot = await getDocs(collection(db, 'signalementAdd'));
                 let count = 0;
 
                 for (const doc of snapshot.docs) {

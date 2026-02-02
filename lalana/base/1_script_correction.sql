@@ -15,8 +15,11 @@ CREATE TABLE points (
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(50),
-    password VARCHAR(255) NOT NULL
+    password VARCHAR(255) NOT NULL,
+    firebase_token VARCHAR(255),
+    current_status INTEGER DEFAULT -1
 );
+
 
 -- =====================
 -- USERS HISTORY
@@ -25,6 +28,7 @@ CREATE TABLE users_history (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id),
     changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    description VARCHAR(100),
     status INTEGER NOT NULL
 );
 
@@ -105,3 +109,5 @@ CREATE TABLE probleme_history (
     status_id INT REFERENCES probleme_status(id),
     changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+

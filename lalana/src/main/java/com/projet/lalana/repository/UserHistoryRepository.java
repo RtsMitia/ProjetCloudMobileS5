@@ -2,6 +2,7 @@ package com.projet.lalana.repository;
 
 import com.projet.lalana.model.User;
 import com.projet.lalana.model.UserHistory;
+import com.projet.lalana.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 public interface UserHistoryRepository extends JpaRepository<UserHistory, Integer> {
 
+	Optional<UserHistory> findTopByUserOrderByChangedAtDesc(User user);
     /**
      * Find all history records for a user within a time range, ordered by most
      * recent first

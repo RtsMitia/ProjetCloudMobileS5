@@ -34,8 +34,8 @@ async function importSignalements() {
   const batch = db.batch();
   let count = 0;
 
-  for (const signalement of testData.signalements) {
-    const docRef = db.collection('signalements').doc();
+  for (const signalement of testData.signalementListe) {
+    const docRef = db.collection('signalementListe').doc();
     
     // Convertir la date ISO en Timestamp Firestore
     const data = {

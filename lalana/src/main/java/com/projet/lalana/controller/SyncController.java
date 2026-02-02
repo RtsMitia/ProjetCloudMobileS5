@@ -20,7 +20,7 @@ public class SyncController {
     @PostMapping
     public ApiResponse runSync() {
         try {
-            var out = syncService.syncAll();
+            var out = syncService.runFullSyncCycle();
             return new ApiResponse(true, "Sync completed", out);
         } catch (Exception e) {
             logger.error("Error during sync", e);

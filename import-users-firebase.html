@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importer des utilisateurs dans Firebase</title>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.delete {
+            background-color: #f44336;
+        }
+        button.delete:hover {
+            background-color: #da190b;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+        }
+        td {
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Importer des utilisateurs dans Firebase</h1>
+
+        <div class="section">
+            <h2>Configuration Firebase</h2>
+            <p>Utilisez votre configuration Firebase Web (trouvable dans la console Firebase).</p>
+            <button onclick="loadFirebaseConfig()">Charger Configuration Firebase</button>
+            <p id="configStatus"></p>
+        </div>
+
+        <div class="section">
+            <h2>1. Créer des utilisateurs de test</h2>
+            <p>Cela créera 5 utilisateurs de test dans Firebase Authentication.</p>
+            <button onclick="createTestUsers()">Créer Utilisateurs de Test</button>
+        </div>
+
+        <div class="section">
+            <h2>2. Désactiver des utilisateurs (Simulation blocage)</h2>
+            <p>Désactive certains utilisateurs dans Firebase pour tester la synchronisation de blocage.</p>
+            <button onclick="disableTestUsers()">Désactiver Utilisateurs (Firebase Admin)</button>
+            <p><em>Note: Requires Firebase Admin SDK (server-side). Utilisez plutôt le endpoint backend:</em></p>
+            <pre>GET http://localhost:8080/api/users/sync/block</pre>
+        </div>
+
+        <div class="section">
+            <h2>3. Lister les utilisateurs dans Firebase</h2>
+            <button onclick="listFirebaseUsers()">Lister Utilisateurs Firebase</button>
+            <div id="usersList"></div>
+        </div>
+
+        <div class="section">
+            <h2>4. Nettoyer Firebase</h2>
+            <p>Supprimer tous les utilisateurs de test.</p>
+            <button class="delete" onclick="deleteAllUsers()">Supprimer Tous les Utilisateurs</button>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // Firebase configuration - Replace with your actual config from Firebase Console
+        const firebaseConfig = {
+
+            apiKey: "AIzaSyAux1vRChlG_x_aOTY5sEvZ0zk4QXl7YYA",
+
+            authDomain: "gestionroutiere-aaa53.firebaseapp.com",
+
+            databaseURL: "https://gestionroutiere-aaa53-default-rtdb.firebaseio.com",
+
+            projectId: "gestionroutiere-aaa53",
+
+            storageBucket: "gestionroutiere-aaa53.firebasestorage.app",
+
+            messagingSenderId: "997547144040",
+
+            appId: "1:997547144040:web:3a8b8de80842c006435cdd",
+
+            measurementId: "G-EHW0B3B9VF"
+
+            };
+
+        let firebaseInitialized = false;
+
+        function loadFirebaseConfig() {
+            try {
+                // Try to load config from a local file or environment
+                const configStr = localStorage.getItem('firebaseConfig');
+                if (configStr) {
+                    const config = JSON.parse(configStr);
+                    Object.assign(firebaseConfig, config);
+                    showStatus('Configuration Firebase chargée depuis localStorage', 'success');
+                } else {
+                    showStatus('Pas de configuration trouvée dans localStorage. Vérifiez votre config Firebase.', 'info');
+                }
+            } catch (e) {
+                showStatus('Erreur lors du chargement de la config: ' + e.message, 'error');
+            }
+        }
+
+        function initFirebase() {
+            if (firebaseInitialized) return;
+            try {
+                firebase.initializeApp(firebaseConfig);
+                firebaseInitialized = true;
+                showStatus('Firebase initialisé avec succès', 'success');
+            } catch (e) {
+                showStatus('Erreur lors de l\'initialisation de Firebase: ' + e.message, 'error');
+            }
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = type;
+            statusDiv.innerText = message;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        async function createTestUsers() {
+            initFirebase();
+            const testUsers = [
+                { email: 'user1@test.com', password: 'password123', displayName: 'User 1' },
+                { email: 'user2@test.com', password: 'password123', displayName: 'User 2' },
+                { email: 'user3@test.com', password: 'password123', displayName: 'User 3' },
+                { email: 'user4@test.com', password: 'password123', displayName: 'User 4' },
+                { email: 'user5@test.com', password: 'password123', displayName: 'User 5' }
+            ];
+
+            try {
+                showStatus('Création des utilisateurs...', 'info');
+                const auth = firebase.auth();
+                let created = 0;
+
+                for (const testUser of testUsers) {
+                    try {
+                        const userCredential = await auth.createUserWithEmailAndPassword(testUser.email, testUser.password);
+                        await userCredential.user.updateProfile({ displayName: testUser.displayName });
+                        created++;
+                        showStatus(`Utilisateur créé: ${testUser.email}`, 'success');
+                    } catch (e) {
+                        if (e.code === 'auth/email-already-in-use') {
+                            showStatus(`Utilisateur ${testUser.email} existe déjà`, 'info');
+                        } else {
+                            showStatus(`Erreur pour ${testUser.email}: ${e.message}`, 'error');
+                        }
+                    }
+                }
+
+                showStatus(`${created} utilisateurs créés avec succès`, 'success');
+            } catch (e) {
+                showStatus('Erreur lors de la création des utilisateurs: ' + e.message, 'error');
+            }
+        }
+
+        async function listFirebaseUsers() {
+            initFirebase();
+            try {
+                showStatus('Récupération des utilisateurs...', 'info');
+                const auth = firebase.auth();
+                const usersList = document.getElementById('usersList');
+                usersList.innerHTML = '';
+
+                // Note: listUsers() requires Firebase Admin SDK (server-side)
+                // Client-side can only list current user or users who have signed in
+                // For testing, we can fetch from a server endpoint
+
+                const response = await fetch('/api/firebase/users/list');
+                if (!response.ok) {
+                    throw new Error('Erreur serveur: ' + response.statusText);
+                }
+
+                const data = await response.json();
+                const users = data.data || [];
+
+                if (users.length === 0) {
+                    usersList.innerHTML = '<p>Aucun utilisateur trouvé</p>';
+                    return;
+                }
+
+                let table = '<table><tr><th>UID</th><th>Email</th><th>Nom</th><th>Désactivé</th><th>Créé</th></tr>';
+                users.forEach(user => {
+                    table += `<tr>
+                        <td>${user.uid || '-'}</td>
+                        <td>${user.email || '-'}</td>
+                        <td>${user.displayName || '-'}</td>
+                        <td>${user.disabled ? 'Oui' : 'Non'}</td>
+                        <td>${new Date(user.createdAt).toLocaleString()}</td>
+                    </tr>`;
+                });
+                table += '</table>';
+
+                usersList.innerHTML = table;
+                showStatus(`${users.length} utilisateurs récupérés`, 'success');
+            } catch (e) {
+                showStatus('Erreur lors de la récupération des utilisateurs: ' + e.message, 'error');
+            }
+        }
+
+        async function disableTestUsers() {
+            showStatus('Pour désactiver les utilisateurs, utilisez le endpoint backend: GET /api/users/sync/block', 'info');
+            showStatus('Cela récupérera les utilisateurs désactivés de Firebase et créera des historiques locaux.', 'info');
+        }
+
+        async function deleteAllUsers() {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer TOUS les utilisateurs Firebase? Cette action est irréversible.')) {
+                return;
+            }
+
+            initFirebase();
+            try {
+                showStatus('Suppression des utilisateurs...', 'info');
+                
+                // This requires Firebase Admin SDK (server-side)
+                // Client-side cannot delete users directly
+                
+                showStatus('Utilisez le endpoint backend pour gérer les utilisateurs ou utilisez Firebase Console', 'info');
+            } catch (e) {
+                showStatus('Erreur lors de la suppression: ' + e.message, 'error');
+            }
+        }
+
+        // Load config on page load
+        window.addEventListener('load', function() {
+            loadFirebaseConfig();
+        });
+
+        // Helper function to save config to localStorage
+        function saveFirebaseConfig() {
+            const config = {
+                apiKey: document.getElementById('apiKey')?.value || firebaseConfig.apiKey,
+                authDomain: document.getElementById('authDomain')?.value || firebaseConfig.authDomain,
+                projectId: document.getElementById('projectId')?.value || firebaseConfig.projectId,
+                storageBucket: document.getElementById('storageBucket')?.value || firebaseConfig.storageBucket,
+                messagingSenderId: document.getElementById('messagingSenderId')?.value || firebaseConfig.messagingSenderId,
+                appId: document.getElementById('appId')?.value || firebaseConfig.appId
+            };
+            localStorage.setItem('firebaseConfig', JSON.stringify(config));
+            showStatus('Configuration sauvegardée', 'success');
+        }
+    </script>
+</body>
+</html>

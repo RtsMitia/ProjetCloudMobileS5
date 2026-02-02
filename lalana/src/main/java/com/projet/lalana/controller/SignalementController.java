@@ -4,6 +4,8 @@ import com.projet.lalana.response.ApiResponse;
 import com.projet.lalana.service.ServiceException;
 import com.projet.lalana.service.SignalementService;
 import com.projet.lalana.model.Signalement;
+import com.projet.lalana.model.Probleme;
+import com.projet.lalana.dto.RapportTech;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
@@ -66,4 +69,33 @@ public class SignalementController {
             return new ApiResponse(false, "Erreur serveur lors de la synchronisation", null);
         }
     }
+
+    @PostMapping("/{id}/sendtech")
+    public ApiResponse sendTechnicien(@PathVariable Integer id){
+        try {
+            Signalement signalement = signalementService.envoyerTechnicien(id);
+            return new ApiResponse(true, "Signalements envoyés aux techniciens", signalement);
+        } catch (ServiceException se) {
+            logger.error("ServiceException sendTechnicien", se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error sendTechnicien", e);
+            return new ApiResponse(false, "Erreur serveur lors de l'envoi des signalements aux techniciens", null);
+        }
+    }
+
+    @PostMapping("/rapportTech") 
+    public ApiResponse rapportTechnicien(@RequestBody RapportTech rapportTech){
+        try {
+            Probleme probleme = signalementService.rapportTechnicien(rapportTech);
+            return new ApiResponse(true, "Rapport technicien enregistré", probleme);
+        } catch (ServiceException se) {
+            logger.error("ServiceException rapportTechnicien", se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error rapportTechnicien", e);
+            return new ApiResponse(false, "Erreur serveur lors de l'enregistrement du rapport technicien", null);
+        }
+    }
+
 }
