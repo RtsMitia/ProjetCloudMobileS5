@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,6 +40,19 @@ public class UserController {
         } catch (Exception e) {
             logger.error("Unexpected error getAllUsers", e);
             return new ApiResponse(false, "Erreur serveur lors de la récupération des utilisateurs", null);
+        }
+    }
+    @GetMapping("/{id}")
+    public ApiResponse getUserById(@PathVariable Integer id) {
+        try {
+            User user = userService.getUserById(id);
+            return new ApiResponse(true, "Utilisateur récupéré", user);
+        } catch (ServiceException se) {
+            logger.error("ServiceException getUserById id={}", id, se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error getUserById id={}", id, e);
+            return new ApiResponse(false, "Erreur serveur lors de la récupération de l'utilisateur", null);
         }
     }
 
@@ -85,7 +99,7 @@ public class UserController {
         }
     }
 
-    @PostMapping("/update/{id}")
+    @PutMapping("/{id}")
     public ApiResponse updateUser(@PathVariable Integer id, @RequestBody UserDTO updatedUser)  {
         try {
             updatedUser.setId(id);

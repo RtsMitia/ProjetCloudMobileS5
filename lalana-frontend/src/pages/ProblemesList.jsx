@@ -12,6 +12,7 @@ import {
   UserIcon,
   BuildingOfficeIcon,
   CheckCircleIcon,
+  PlayIcon,
 } from "@heroicons/react/24/outline";
 
 export default function ProblemesList() {
@@ -58,13 +59,13 @@ export default function ProblemesList() {
       setIsLoading(true);
       try {
         const response = await fetch('http://localhost:8080/api/problemes');
-        
+
         if (!response.ok) {
           throw new Error(`Erreur HTTP! Statut: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.success && data.data) {
           const formattedData = formatProblemeData(data.data);
           setProblemes(formattedData);
@@ -84,104 +85,59 @@ export default function ProblemesList() {
 
     // Données mockées pour fallback
     const getMockProblemes = () => {
-      return [
-        {
-          id: 1,
-          surface: 4.5,
-          budgetEstime: 2500000,
-          entrepriseId: 1,
-          entrepriseName: "Entreprise A",
-          entrepriseContact: "0123456789",
-          entrepriseAdresse: "1 Rue Exemple, 75001 Paris",
-          statusId: 1,
-          statusNom: "Ouvert",
-          statusValeur: 10,
-          signalementId: 1,
-          userId: 1,
-          userEmail: "alice@example.com",
-          x: 47.5218,
-          y: -18.9089,
-          localisation: "Antananarivo - Avenue de l'Independance",
-          description: "Nid-de-poule important sur la chaussee principale, risque pour les vehicules",
-          signalementCreatedAt: "2024-01-15T09:30:00",
-          signalementStatus: "Nouveau",
-          signalementValeur: 10,
-          createdAt: "2024-01-15T09:30:00",
-        },
-        {
-          id: 2,
-          surface: 12,
-          budgetEstime: 850000,
-          entrepriseId: 2,
-          entrepriseName: "Entreprise B",
-          entrepriseContact: "0987654321",
-          entrepriseAdresse: "2 Avenue Exemple, 69001 Lyon",
-          statusId: 2,
-          statusNom: "Assigné",
-          statusValeur: 20,
-          signalementId: 2,
-          userId: 2,
-          userEmail: "bob@example.com",
-          x: 49.3958,
-          y: -18.1443,
-          localisation: "Toamasina - Port",
-          description: "eclairage public defectueux depuis 3 jours, quartier sombre le soir",
-          signalementCreatedAt: "2024-01-16T14:20:00",
-          signalementStatus: "En cours",
-          signalementValeur: 20,
-          createdAt: "2024-01-16T14:20:00",
-        },
-        {
-          id: 3,
-          surface: 8.2,
-          budgetEstime: 1500000,
-          entrepriseId: 1,
-          entrepriseName: "Entreprise A",
-          entrepriseContact: "0123456789",
-          entrepriseAdresse: "1 Rue Exemple, 75001 Paris",
-          statusId: 1,
-          statusNom: "Ouvert",
-          statusValeur: 10,
-          signalementId: 3,
-          userId: 1,
-          userEmail: "alice@example.com",
-          x: 47.0331,
-          y: -19.8689,
-          localisation: "Antsirabe - Centre ville",
-          description: "Caniveau bouche causant des inondations lors des pluies",
-          signalementCreatedAt: "2024-01-17T11:45:00",
-          signalementStatus: "Nouveau",
-          signalementValeur: 10,
-          createdAt: "2024-01-17T11:45:00",
-        },
-        {
-          id: 4,
-          surface: 5.0,
-          budgetEstime: 1200000,
-          entrepriseId: 3,
-          entrepriseName: "Entreprise C",
-          entrepriseContact: "0123456789",
-          entrepriseAdresse: "3 Rue Exemple, 75002 Paris",
-          statusId: 3,
-          statusNom: "Résolu",
-          statusValeur: 30,
-          signalementId: 4,
-          userId: 3,
-          userEmail: "charlie@example.com",
-          x: 47.0000,
-          y: -19.0000,
-          localisation: "Antananarivo - Centre",
-          description: "Problème déjà résolu",
-          signalementCreatedAt: "2024-01-10T08:00:00",
-          signalementStatus: "Résolu",
-          signalementValeur: 30,
-          createdAt: "2024-01-10T08:00:00",
-        },
-      ];
+      return [];
     };
 
     fetchProblemes();
   }, []);
+
+  // Fonction pour mettre un problème en cours de traitement
+  const handleProcesserProbleme = async (problemeId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/problemes/${problemeId}/processer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        setProblemes(prevProblemes =>
+          prevProblemes.map(prob =>
+            prob.id === problemeId
+              ? {
+                ...prob,
+                statusValeur: 20,
+                statusNom: "En cours de traitement",
+                statusId: 2
+              }
+              : prob
+          )
+        );
+        alert(`Problème #${problemeId} mis en cours de traitement avec succès`);
+      } else {
+        throw new Error(`Erreur lors du traitement: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Erreur traitement problème:", error);
+
+      if (window.confirm("L'API n'est pas disponible. Voulez-vous marquer ce problème comme en cours localement ?")) {
+        setProblemes(prevProblemes =>
+          prevProblemes.map(prob =>
+            prob.id === problemeId
+              ? {
+                ...prob,
+                statusValeur: 20,
+                statusNom: "En cours de traitement",
+                statusId: 2
+              }
+              : prob
+          )
+        );
+        alert(`Problème #${problemeId} marqué comme en cours localement`);
+      }
+    }
+  };
 
   // Fonction pour marquer un problème comme résolu
   const handleResoudreProbleme = async (problemeId) => {
@@ -196,15 +152,15 @@ export default function ProblemesList() {
 
       if (response.ok) {
         // Mettre à jour l'état local
-        setProblemes(prevProblemes => 
-          prevProblemes.map(prob => 
-            prob.id === problemeId 
-              ? { 
-                  ...prob, 
-                  statusValeur: 30, 
-                  statusNom: "Résolu",
-                  statusId: 3
-                } 
+        setProblemes(prevProblemes =>
+          prevProblemes.map(prob =>
+            prob.id === problemeId
+              ? {
+                ...prob,
+                statusValeur: 30,
+                statusNom: "Résolu",
+                statusId: 3
+              }
               : prob
           )
         );
@@ -214,18 +170,18 @@ export default function ProblemesList() {
       }
     } catch (error) {
       console.error("Erreur résolution problème:", error);
-      
+
       // Fallback: Mettre à jour localement si l'API n'est pas disponible
       if (window.confirm("L'API n'est pas disponible. Voulez-vous marquer ce problème comme résolu localement ?")) {
-        setProblemes(prevProblemes => 
-          prevProblemes.map(prob => 
-            prob.id === problemeId 
-              ? { 
-                  ...prob, 
-                  statusValeur: 30, 
-                  statusNom: "Résolu",
-                  statusId: 3
-                } 
+        setProblemes(prevProblemes =>
+          prevProblemes.map(prob =>
+            prob.id === problemeId
+              ? {
+                ...prob,
+                statusValeur: 30,
+                statusNom: "Résolu",
+                statusId: 3
+              }
               : prob
           )
         );
@@ -238,32 +194,32 @@ export default function ProblemesList() {
   const getStatusInfo = (statusValeur, statusNom) => {
     // Utilise le nom du statut de l'API si disponible, sinon utilise la valeur
     const statusText = statusNom || "Non défini";
-    
+
     switch (statusValeur) {
       case 10:
-        return { 
-          text: statusText, 
+        return {
+          text: statusText,
           color: "bg-amber-100 text-amber-800 border border-amber-200",
           iconColor: "text-amber-600",
           isResolved: false
         };
       case 20:
-        return { 
-          text: statusText, 
+        return {
+          text: statusText,
           color: "bg-blue-100 text-blue-800 border border-blue-200",
           iconColor: "text-blue-600",
           isResolved: false
         };
       case 30:
-        return { 
-          text: statusText, 
+        return {
+          text: statusText,
           color: "bg-emerald-100 text-emerald-800 border border-emerald-200",
           iconColor: "text-emerald-600",
           isResolved: true
         };
       default:
-        return { 
-          text: statusText, 
+        return {
+          text: statusText,
           color: "bg-gray-100 text-gray-800 border border-gray-200",
           iconColor: "text-gray-600",
           isResolved: false
@@ -296,17 +252,17 @@ export default function ProblemesList() {
   // Filtrer les problèmes
   const getProblemesFiltres = () => {
     let filtered = problemes;
-    
+
     // Filtre par statut
     if (filterStatus !== "all") {
       const statusValue = parseInt(filterStatus);
       filtered = filtered.filter(p => p.statusValeur === statusValue);
     }
-    
+
     // Filtre par recherche
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(p => 
+      filtered = filtered.filter(p =>
         p.localisation.toLowerCase().includes(query) ||
         p.description.toLowerCase().includes(query) ||
         p.userEmail.toLowerCase().includes(query) ||
@@ -314,7 +270,7 @@ export default function ProblemesList() {
         p.statusNom.toLowerCase().includes(query)
       );
     }
-    
+
     return filtered;
   };
 
@@ -358,9 +314,9 @@ export default function ProblemesList() {
           </p>
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-         
+
           {/* Bouton pour ajouter un nouveau probleme - peut être active si nécessaire */}
-         
+
         </div>
       </div>
 
@@ -381,7 +337,7 @@ export default function ProblemesList() {
           </div>
           <div className="flex items-center gap-2">
             <FunnelIcon className="h-5 w-5 text-gray-500" />
-            <select 
+            <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -402,7 +358,7 @@ export default function ProblemesList() {
             <MapPinIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">Aucun problème trouvé</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {searchQuery || filterStatus !== "all" 
+              {searchQuery || filterStatus !== "all"
                 ? "Essayez de modifier vos critères de recherche"
                 : "Aucun problème n'a été enregistré pour le moment"}
             </p>
@@ -514,6 +470,17 @@ export default function ProblemesList() {
                       </td>
                       <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
+                          {/* Bouton Processer - visible uniquement si le statut est 10 (ouvert) */}
+                          {prob.statusValeur === 10 && (
+                            <button
+                              onClick={() => handleProcesserProbleme(prob.id)}
+                              className="text-blue-600 hover:text-blue-900 p-1.5 hover:bg-blue-50 rounded"
+                              title="Mettre en cours de traitement"
+                            >
+                              <PlayIcon className="h-5 w-5" />
+                            </button>
+                          )}
+
                           {/* Bouton Résoudre - visible uniquement si le problème n'est pas déjà résolu */}
                           {prob.statusValeur !== 30 && (
                             <button
@@ -524,7 +491,7 @@ export default function ProblemesList() {
                               <CheckCircleIcon className="h-5 w-5" />
                             </button>
                           )}
-                          
+
                         </div>
                       </td>
                     </tr>

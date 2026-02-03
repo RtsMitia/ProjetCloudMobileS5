@@ -43,44 +43,57 @@ function Login() {
       return;
     }
 
-    // Simulation d'authentification
-    setTimeout(() => {
-      // Ici, vous feriez normalement un appel API
-      const mockUsers = [
-        { email: "admin@lalana.mg", password: "admin123", role: "admin", name: "Administrateur" },
-        { email: "entreprise@voirie.mg", password: "entreprise123", role: "entreprise", name: "Entreprise de Voirie" },
-        { email: "citoyen@example.mg", password: "citoyen123", role: "citoyen", name: "Jean Rakoto" },
-      ];
+    try {
+      // Appel API d'authentification
+      const response = await fetch('http://localhost:8080/auth/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-      const user = mockUsers.find(
-        (u) => u.email === formData.email && u.password === formData.password
-      );
+      const data = await response.json();
+      console.log(`data ${data}`);
+      console.log(data);
 
-      if (user) {
-        // Stockage dans localStorage (en production, utilisez des tokens sécurisés)
-        localStorage.setItem("user", JSON.stringify({
-          email: user.email,
-          role: user.role,
-          name: user.name,
-          isAuthenticated: true,
-        }));
-
-        // Redirection basée sur le rôle
-        switch (user.role) {
-          case "admin":
-            navigate("/admin/dashboard");
-            break;
-          case "entreprise":
-            navigate("/entreprise/dashboard");
-            break;
-          default:
-            navigate("/dashboard");
-        }
-      } else {
-        setError("Email ou mot de passe incorrect");
+      if (!response.ok) {
+        // Gérer les erreurs d'authentification
+        throw new Error(data.error || "Erreur lors de l'authentification");
       }
+
+      // Vérifier si un token est présent dans la réponse
+      if (!data.token || data.token.trim() === "") {
+        throw new Error("Vous n'êtes pas encore inscrit. Veuillez créer un compte.");
+      }
+
+      // Stocker le token et les informations utilisateur dans localStorage
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("user", JSON.stringify({
+        id: data.id,
+        email: data.email,
+        role: data.role || "user",
+        isAuthenticated: true,
+      }));
+
+      // Si "Se souvenir de moi" est coché, stocker aussi les credentials (optionnel)
+      if (formData.rememberMe) {
+        localStorage.setItem("rememberMe", "true");
+      }
+
+      console.log("Connexion réussie, token:", data.token);
+
+      // Redirection vers la page d'accueil ou le backoffice
+      navigate("/");
+
+    } catch (error) {
+      console.error("Erreur de connexion:", error);
+      setError(error.message);
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const handleDemoLogin = (role) => {
@@ -213,11 +226,10 @@ function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white ${
-                  loading
+                className={`group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white ${loading
                     ? "bg-blue-400 cursor-not-allowed"
                     : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                } transition-all duration-200 shadow-sm`}
+                  } transition-all duration-200 shadow-sm`}
               >
                 {loading ? (
                   <>

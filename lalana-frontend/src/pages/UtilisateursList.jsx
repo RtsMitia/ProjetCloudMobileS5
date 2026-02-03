@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   UserGroupIcon,
   EnvelopeIcon,
@@ -12,6 +12,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 export default function UtilisateursList() {
+  const navigate = useNavigate();
   const [utilisateurs, setUtilisateurs] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -105,6 +106,10 @@ export default function UtilisateursList() {
 
     fetchUtilisateurs();
   }, []);
+
+  const handleModifierUtilisateur = (userId) => {
+    navigate(`/backoffice/utilisateurs/${userId}/edit`);
+  };
 
   // Fonction pour synchroniser avec Firebase (bloquer)
   const handleSyncBlock = async () => {
@@ -452,6 +457,13 @@ export default function UtilisateursList() {
                               <span className="text-sm">Débloquer</span>
                             </button>
                           )}
+                            <button
+                              onClick={() => handleModifierUtilisateur(user.id)}
+                              className="inline-flex items-center px-3 py-2 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                              title="Modifier l'utilisateur"
+                            >
+                              Modifier
+                            </button>
                         </div>
                       </td>
                     </tr>

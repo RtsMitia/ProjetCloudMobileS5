@@ -225,6 +225,20 @@ public class UserService {
         }
     }
 
+    public User getUserById(Integer id) {
+        try {
+            Optional<User> uopt = userRepository.findById(id);
+            if (uopt.isEmpty()) {
+                throw new ServiceException("Utilisateur non trouvé id=" + id);
+            }
+            return uopt.get();
+        } catch (ServiceException se) {
+            throw se;
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération de l'utilisateur id={}", id, e);
+            throw new ServiceException("Erreur lors de la récupération de l'utilisateur", e);
+        }
+    }
 
     // Firebase initialization moved to FirebaseService
 

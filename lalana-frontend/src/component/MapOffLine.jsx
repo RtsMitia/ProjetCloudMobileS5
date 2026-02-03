@@ -14,6 +14,7 @@ import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
@@ -24,7 +25,7 @@ L.Icon.Default.mergeOptions({
 function MapOffLine() {
   const [signalement, setSignalement] = useState([]);
   const [probleme, setProbleme] = useState([]);
-  const [showSignalements, setShowSignalements] = useState(true);
+  const [showSignalements, setShowSignalements] = useState(true); 
   const [showProblemes, setShowProblemes] = useState(true);
   const [showList, setShowList] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");

@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.projet.lalana.service.ServiceException;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,11 +46,11 @@ public class AuthController {
 
             return ResponseEntity.ok(resp);
         } catch (com.projet.lalana.service.ServiceException se) {
-            Map<String, Object> err = new java.util.HashMap<>();
+            Map<String, Object> err = new HashMap<>();
             err.put("error", se.getMessage());
             return ResponseEntity.status(401).body(err);
         } catch (Exception e) {
-            Map<String, Object> err = new java.util.HashMap<>();
+            Map<String, Object> err = new HashMap<>();
             err.put("error", "Internal server error");
             return ResponseEntity.status(500).body(err);
         }
@@ -74,12 +76,12 @@ public class AuthController {
                 return ResponseEntity.status(status).body(resp);
             }
             return ResponseEntity.ok(resp);
-        } catch (com.projet.lalana.service.ServiceException se) {
-            Map<String, Object> err = new java.util.HashMap<>();
+        } catch (ServiceException se) {
+            Map<String, Object> err = new HashMap<>();
             err.put("error", se.getMessage());
             return ResponseEntity.status(500).body(err);
         } catch (Exception e) {
-            Map<String, Object> err = new java.util.HashMap<>();
+            Map<String, Object> err = new HashMap<>();
             err.put("error", "Internal server error");
             return ResponseEntity.status(500).body(err);
         }

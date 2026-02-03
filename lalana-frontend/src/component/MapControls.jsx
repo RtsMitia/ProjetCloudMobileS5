@@ -12,6 +12,8 @@ import {
 } from "@heroicons/react/24/outline";
 import StatusFilter from "./StatusFilter";
 import { useNavigate } from "react-router-dom";
+import { isAdminToken , isLogedIn } from "../utils/config";
+
 
 function MapControls({
   totalPoints,
@@ -42,7 +44,8 @@ function MapControls({
   const handleLoginClick = () => {
     navigate("/login");
   };
-
+  const token = localStorage.getItem("token") || "";
+  
 
   return (
     <>
@@ -85,7 +88,7 @@ function MapControls({
               <ListBulletIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Liste</span>
             </button>
-
+            {isAdminToken(token) && (
             <button 
               className={`flex items-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors`}
               onClick={handleBackOfficeClick}
@@ -94,12 +97,13 @@ function MapControls({
               <span className="hidden sm:inline">BackOffice</span>
 
             </button>
+            ) } 
             
             <button
               onClick={onToggleFullscreen}
               className="flex items-center gap-1 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
             >
-              {isFullscreen ? (
+              {isFullscreen ? (  
                 <>
                   <ArrowsPointingInIcon className="h-4 w-4" />
                   <span className="hidden sm:inline">Réduire</span>

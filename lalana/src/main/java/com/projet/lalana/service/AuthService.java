@@ -184,13 +184,7 @@ public class AuthService {
      * Also checks for account locks and tracks failed attempts.
      */
     public User login(String email, String password) {
-        System.out.println("[DEBUG] spring.datasource.url=" + env.getProperty("spring.datasource.url"));
-        System.out.println("[DEBUG] login called with email=" + email);
         try {
-            List<User> allUsers = userRepository.findAll();
-            System.out.println("[DEBUG] users.count=" + allUsers.size());
-            allUsers.forEach(u -> System.out.println("[DEBUG] DB USER id=" + u.getId() + " email='" + u.getEmail() + "'"));
-
             Optional<User> userOpt = userRepository.findByEmail(email);
             System.out.println("[DEBUG] userOpt present=" + userOpt.isPresent());
             userOpt.ifPresent(u -> System.out.println("[DEBUG] userOpt.email=" + u.getEmail()));
@@ -323,13 +317,13 @@ public class AuthService {
         try {
             Map<String, Object> firebaseResp = signInWithEmailAndPassword(email, password);
             // If firebase returned an idToken, consider it successful
-            if (firebaseResp != null && firebaseResp.containsKey("idToken")) {
-                System.out.println("Authenticated " + email + " via Firebase");
-                return firebaseResp;
-            }
+            // if (firebaseResp != null && firebaseResp.containsKey("idToken")) {
+            //     System.out.println("Authenticated " + email + " via Firebase");
+            //     return firebaseResp;
+            // }
 
             // If response contains an error/status or no idToken, log and immediately fallback to local
-            System.out.println("Firebase sign-in did not return idToken for " + email + ": " + firebaseResp + " — falling back to local login");
+            // System.out.println("Firebase sign-in did not return idToken for " + email + ": " + firebaseResp + " — falling back to local login");
             User user = login(email, password);
             Map<String, Object> out = new HashMap<>();
             out.put("local", true);

@@ -27,6 +27,7 @@ import com.projet.lalana.model.Point;
 import com.projet.lalana.repository.PointRepository;
 import com.projet.lalana.repository.UserRepository;
 
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import org.slf4j.Logger;
@@ -42,6 +43,10 @@ import sun.misc.Signal;
 @Service
 @RequiredArgsConstructor
 public class SignalementService {
+    private final Integer CREATE_STATUS_VALUE = 10;
+    private final Integer PROCESSING_STATUS_VALUE = 20;
+    private final Integer RESOLVED_STATUS_VALUE = 30;
+
 
     private static final Logger logger = LoggerFactory.getLogger(SignalementService.class);
 
@@ -127,7 +132,7 @@ public class SignalementService {
         Timestamp ts = doc.getTimestamp("createdAt");
         if (ts == null)
             ts = doc.getTimestamp("createdAt");
-            b.createdAt(LocalDateTime.now());
+        b.createdAt(LocalDateTime.now());
         if (ts != null) {
             b.createdAt(ts.toDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
         }
@@ -152,11 +157,10 @@ public class SignalementService {
             Double uid = asDouble(doc.get("userId"));
             if (uid != null)
                 b.userId(uid.intValue());
-        } 
+        }
         if (doc.get("userToken") != null) {
             b.userToken(asString(doc.get("userToken")));
         }
-
 
         return b.build();
     }
@@ -195,25 +199,25 @@ public class SignalementService {
             SignalementStatus status = statusSignalementRepository.findByValeur(10)
                     .orElseThrow(() -> new ServiceException("Statut initial du signalement non trouvé"));
             for (SignalementDto dto : dtos) {
-                
+
                 try {
                     // Build Signalement from DTO
                     Signalement s = new Signalement();
                     // getUser
-                    User user = null ;
-                    if( dto.getUserToken() != null ){
-                    user = userRepository.findByFirebaseToken(dto.getUserToken())
-                    .orElseThrow(() -> new ServiceException(
-                        "Utilisateur non trouvé pour le token: " + dto.getUserToken()));
-                    } 
-                    if ( user == null && dto.getUserId() != null ) {
+                    User user = null;
+                    if (dto.getUserToken() != null) {
+                        user = userRepository.findByFirebaseToken(dto.getUserToken())
+                                .orElseThrow(() -> new ServiceException(
+                                        "Utilisateur non trouvé pour le token: " + dto.getUserToken()));
+                    }
+                    if (user == null && dto.getUserId() != null) {
                         // assign to a default user (e.g., admin) if not found by token
                         user = userRepository.findById(1)
-                        .orElseThrow(() -> new ServiceException(
-                            "Utilisateur par défaut non trouvé pour l'ID 1"));
+                                .orElseThrow(() -> new ServiceException(
+                                        "Utilisateur par défaut non trouvé pour l'ID 1"));
                     }
                     s.setUser(user);
-                    
+
                     // Coordinates
                     Double x = dto.getX();
                     Double y = dto.getY();
@@ -244,13 +248,9 @@ public class SignalementService {
                     history.setChangedAt(now);
                     history.setStatus(status);
                     signalementHistoryRepository.save(history);
-                    
 
                     signalementRepository.save(s);
                     signalementHistoryRepository.save(history);
-                    
-
-
 
                     imported++;
                 } catch (Exception inner) {
@@ -283,21 +283,27 @@ public class SignalementService {
         return imported;
     }
 
+    @Transactional
     public Probleme rapportTechnicien(RapportTech rapportTech) {
         Probleme probleme = null;
 
         try {
+            LocalDateTime now = LocalDateTime.now();
             Signalement signalement = getById(rapportTech.getSignalementId())
                     .orElseThrow(() -> new ServiceException(
                             "Signalement non trouvé pour l'ID: " + rapportTech.getSignalementId()));
             Entreprise entreprise = entrepriseRepository.findById(rapportTech.getEntrepriseId())
                     .orElseThrow(() -> new ServiceException(
                             "Entreprise non trouvée pour l'ID: " + rapportTech.getEntrepriseId()));
-            ProblemeStatus status = problemeStatusRepository.findByValeur(20)
+            
+            ProblemeStatus status = problemeStatusRepository.findByValeur(CREATE_STATUS_VALUE)
                     .orElseThrow(() -> new ServiceException("Statut initial du problème non trouvé"));
-            SignalementStatus signalementStatus = statusSignalementRepository.findByValeur(30)
-                    .orElseThrow(() -> new ServiceException("Statut 'En cours de traitement' non trouvé"));
 
+            SignalementStatus signalementStatus = statusSignalementRepository.findByValeur(RESOLVED_STATUS_VALUE)
+                    .orElseThrow(() -> new ServiceException("Statut 'En cours de traitement' non trouvé"));
+            
+
+            //create probleme
             probleme = new Probleme();
             probleme.setSignalement(signalement);
             probleme.setSurface(rapportTech.getSurface());
@@ -305,12 +311,26 @@ public class SignalementService {
             probleme.setEntreprise(entreprise);
             probleme.setProblemeStatus(status);
             probleme.setFirestoreSynced(false);
-
+            // Update signalement status to resolved
             signalement.setStatus(signalementStatus);
             signalement.setFirestoreSynced(false);
+            //history probleme
+            ProblemeHistory problemeHistory = new ProblemeHistory();
+            problemeHistory.setProbleme(probleme);
+            problemeHistory.setStatus(status);
+            problemeHistory.setChangedAt(now);
+            //history signalement
+            SignalementHistory signalementHistory = new SignalementHistory();
+            signalementHistory.setSignalement(signalement);
+            signalementHistory.setStatus(signalementStatus);
+            signalementHistory.setChangedAt(now);
 
+            //save
             signalementRepository.save(signalement);
+            signalementHistoryRepository.save(signalementHistory);
             probleme = problemeRepository.save(probleme);
+            problemeHistoryRepository.save(problemeHistory);
+
 
         } catch (Exception e) {
             logger.error("Erreur rapport technicien", e);
