@@ -9,6 +9,7 @@ import UtilisateursList from './pages/UtilisateursList.jsx';
 import UtilisateurEdit from './pages/UtilisateurEdit.jsx';
 import RapportTech from './pages/RapportTech.jsx';
 import ProtectedRoute from './component/ProtectedRoute.jsx';
+import ManagerDashboard from './pages/ManagerDashboard.jsx';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="utilisateurs/:id/edit" element={<UtilisateurEdit />} />
         <Route path="utilisateurs/create" element={<Register />} />
         <Route path="rapportTech/:id" element={<RapportTech />} />
+        <Route path="manager" element={<ManagerDashboard />} />
       </Route>
     </Routes>
   );
