@@ -8,6 +8,7 @@ import ProblemesList from './pages/ProblemesList.jsx';
 import UtilisateursList from './pages/UtilisateursList.jsx';
 import UtilisateurEdit from './pages/UtilisateurEdit.jsx';
 import RapportTech from './pages/RapportTech.jsx';
+import ManagerDashboard from './pages/ManagerDashboard.jsx';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="utilisateurs" element={<UtilisateursList />} />
         <Route path="utilisateurs/:id/edit" element={<UtilisateurEdit />} />
         <Route path="rapportTech/:id" element={<RapportTech />} />
+        <Route path="manager" element={<ManagerDashboard />} />
       </Route>
     </Routes>
   );

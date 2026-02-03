@@ -39,6 +39,13 @@ export default function BackOffice() {
       color: "text-yellow-600 bg-yellow-50 border-yellow-100",
       hoverColor: "hover:bg-yellow-50 hover:border-yellow-200",
     },
+    {
+      name: "Dashboard Manager",
+      path: "/backoffice/manager",
+      icon: ChartBarIcon,
+      color: "text-purple-600 bg-purple-50 border-purple-100",
+      hoverColor: "hover:bg-purple-50 hover:border-purple-200",
+    },
   ];
 
   const handleSync = async () => {
