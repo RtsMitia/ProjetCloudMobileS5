@@ -105,6 +105,15 @@ public class SyncService {
         result.put("deleted_signalements", delSig);
         result.put("deleted_problemes", delProb);
 
+        // 5) cleanup firestore
+        int delSig = deleteSignalementsValeur30();
+        int delProb = deleteProblemesValeur30();
+        result.put("deleted_signalements", delSig);
+        result.put("deleted_problemes", delProb);
+
+
+
+        
         // 6) snapshots
         try {
             result.put("all_signalements", signalementService.getAll());

@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import com.projet.lalana.dto.UserDTO;
 
 @Service
 @RequiredArgsConstructor
@@ -89,6 +90,7 @@ public class UserService {
         return users;
     }
 
+    @Transactional
     public List<UserHistory> getDatasFromFirebase() {
         List<ExportedUserRecord> fireUsers;
         try {
@@ -102,63 +104,61 @@ public class UserService {
 
         for (ExportedUserRecord fu : fireUsers) {
             try {
-                if (Boolean.TRUE.equals(fu.isDisabled())) {
-                    String email = fu.getEmail();
-                    if (email == null || email.isEmpty()) {
-                        continue;
-                    }
+                String email = fu.getEmail();
+                if (email == null || email.isEmpty()) {
+                    continue;
+                }
 
-                    Optional<User> uopt = userRepository.findByEmail(email);
-                        if (uopt.isEmpty()) {
-                            // If no corresponding local user exists, remove the user from Firebase
-                            String fuUid = fu.getUid();
-                            if (fuUid != null && !fuUid.isEmpty()) {
-                                try {
-                                    firebaseService.getAuth().deleteUser(fuUid);
-                                    logger.info("Supprimé l'utilisateur Firebase uid={} car aucun utilisateur local trouvé pour email={}", fuUid, email);
-                                } catch (Exception e) {
-                                    logger.error("Impossible de supprimer l'utilisateur Firebase uid={}", fuUid, e);
-                                }
-                            } else {
-                                logger.warn("Utilisateur Firebase sans uid trouvé pour email={}; impossible de supprimer", email);
-                            }
+                Optional<User> uopt = userRepository.findByEmail(email);
+                String fuUid = fu.getUid();
 
-                            continue;
-                        }
-
+                if (uopt.isPresent()) {
+                    // If local user exists, ensure firebaseToken is stored/updated
                     User user = uopt.get();
-
-        
-                    String fuUid = fu.getUid();
-                    if ((user.getFirebaseToken() == null || user.getFirebaseToken().isEmpty()) && fuUid != null && !fuUid.isEmpty()) {
+                    if (fuUid != null && !fuUid.isEmpty() && (user.getFirebaseToken() == null || user.getFirebaseToken().isEmpty() || !fuUid.equals(user.getFirebaseToken()))) {
                         user.setFirebaseToken(fuUid);
                         try {
                             userRepository.save(user);
-                            logger.info("Rempli firebaseToken pour l'utilisateur local {} (uid={})", user.getId(), fuUid);
+                            logger.info("Rempli/maj firebaseToken pour l'utilisateur local {} (uid={})", user.getId(), fuUid);
                         } catch (Exception e) {
                             logger.error("Impossible de sauvegarder firebaseToken pour user id={}", user.getId(), e);
                         }
                     }
 
-                    Optional<UserHistory> last = userHistoryRepository.findTopByUserOrderByChangedAtDesc(user);
-                    int lastStatus = last.map(UserHistory::getStatus).orElse(-1);
+                    // If the Firebase account is disabled, create a local blocked history and denormalize
+                    if (Boolean.TRUE.equals(fu.isDisabled())) {
+                        try {
+                            UserHistory history = new UserHistory();
+                            history.setUser(user);
+                            history.setChangedAt(LocalDateTime.now());
+                            history.setStatus(BLOCKED_STATUS);
+                            UserHistory saved = userHistoryRepository.save(history);
 
-                    if (lastStatus != BLOCKED_STATUS) {
-                        UserHistory history = new UserHistory();
-                        history.setUser(user);
-                        history.setChangedAt(LocalDateTime.now());
-                        history.setStatus(BLOCKED_STATUS);
+                            // Denormalize: set currentStatus on user and mark firestoreSynced
+                            user.setCurrentStatus(BLOCKED_STATUS);
+                            user.setFirestoreSynced(true);
+                            userRepository.save(user);
 
-                        UserHistory saved = userHistoryRepository.save(history);
-                        
-                        // Denormalize: set currentStatus on user
-                        user.setCurrentStatus(BLOCKED_STATUS);
-                        userRepository.save(user);
-                        
-                        created.add(saved);
-                        logger.info("Utilisateur local {} bloqué (history id={}) suite à Firebase disabled", user.getId(), saved.getId());
+                            created.add(saved);
+                            logger.info("Utilisateur local {} bloqué (history id={}) suite à Firebase disabled", user.getId(), saved.getId());
+                        } catch (Exception e) {
+                            logger.error("Impossible de créer l'historique de blocage pour user email={}", email, e);
+                        }
+                    }
+                } else {
+                    // No local user — if Firebase UID exists, remove the Firebase user to keep Firebase clean
+                    if (fuUid != null && !fuUid.isEmpty()) {
+                        try {
+                            firebaseService.getAuth().deleteUser(fuUid);
+                            logger.info("Supprimé l'utilisateur Firebase uid={} car aucun utilisateur local trouvé pour email={}", fuUid, email);
+                        } catch (Exception e) {
+                            logger.error("Impossible de supprimer l'utilisateur Firebase uid={}", fuUid, e);
+                        }
+                    } else {
+                        logger.info("Utilisateur Firebase avec email {} n'a pas d'uid et n'est pas présent en base locale : aucune action effectuée", email);
                     }
                 }
+
             } catch (Exception e) {
                 logger.error("Erreur lors du traitement de l'utilisateur Firebase uid={}", fu.getUid(), e);
             }
@@ -227,5 +227,53 @@ public class UserService {
 
 
     // Firebase initialization moved to FirebaseService
+
+    /**
+     * Update a user using a DTO. Only non-null DTO fields are applied (partial update).
+     * If currentStatus changes, a UserHistory record is created.
+     */
+    @Transactional
+    public User updateUserFromDTO(UserDTO dto) {
+        if (dto == null) throw new ServiceException("UserDTO cannot be null");
+
+        Integer id = dto.getId();
+        if (id == null) throw new ServiceException("User id is required for update");
+
+        try {
+            Optional<User> uopt = userRepository.findById(id);
+            if (uopt.isEmpty()) {
+                throw new ServiceException("Utilisateur non trouvé id=" + id);
+            }
+            User user = uopt.get();
+
+            // Track status change
+            Integer oldStatus = user.getCurrentStatus() != null ? user.getCurrentStatus() : -1;
+
+            if (dto.getEmail() != null) user.setEmail(dto.getEmail());
+            if (dto.getPassword() != null) user.setPassword(dto.getPassword());
+            if (dto.getFirebaseToken() != null) user.setFirebaseToken(dto.getFirebaseToken());
+            if (dto.getCurrentStatus() != null) user.setCurrentStatus(dto.getCurrentStatus());
+            user.setFirestoreSynced(false);
+
+            User saved = userRepository.save(user);
+
+            // If status changed, create a history record
+            Integer newStatus = saved.getCurrentStatus() != null ? saved.getCurrentStatus() : -1;
+            if (!newStatus.equals(oldStatus)) {
+                UserHistory history = new UserHistory();
+                history.setUser(saved);
+                history.setChangedAt(LocalDateTime.now());
+                history.setStatus(newStatus);
+                userHistoryRepository.save(history);
+            }
+
+            return saved;
+        } catch (ServiceException se) {
+            throw se;
+        } catch (Exception e) {
+            logger.error("Erreur lors de la mise à jour de l'utilisateur id={}", dto.getId(), e);
+            throw new ServiceException("Erreur lors de la mise à jour de l'utilisateur", e);
+        }
+    }
 
 }

@@ -1,6 +1,7 @@
 package com.projet.lalana.controller;
 
 import com.projet.lalana.model.UserHistory;
+import com.projet.lalana.dto.UserDTO;
 import com.projet.lalana.dto.LoginRequest;
 import com.projet.lalana.model.User;
 import com.projet.lalana.response.ApiResponse;
@@ -81,6 +82,21 @@ public class UserController {
         } catch (Exception e) {
             logger.error("Unexpected error syncUnblockedUsersToFirebase", e);
             return new ApiResponse(false, "Erreur serveur lors de la synchronisation des utilisateurs débloqués", null);
+        }
+    }
+
+    @PostMapping("/update/{id}")
+    public ApiResponse updateUser(@PathVariable Integer id, @RequestBody UserDTO updatedUser)  {
+        try {
+            updatedUser.setId(id);
+            User saved = userService.updateUserFromDTO(updatedUser);
+            return new ApiResponse(true, "Utilisateur mis à jour", saved);
+        } catch (ServiceException se) {
+            logger.error("ServiceException updateUser id={}", id, se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error updateUser id={}", id, e);
+            return new ApiResponse(false, "Erreur serveur lors de la mise à jour de l'utilisateur", null);
         }
     }
 }
