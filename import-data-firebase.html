@@ -324,7 +324,7 @@
                         createdAt: Timestamp.fromDate(new Date(signalement.createdAt))
                     };
 
-                    const docRef = await addDoc(collection(db, 'signalements_add'), data);
+                    const docRef = await addDoc(collection(db, 'signalementAdd'), data);
                     successCount++;
 
                     updateStats(testData.signalements.length, successCount, errorCount);
@@ -353,7 +353,7 @@
             addLog('\n🗑️ Suppression en cours...', 'warning');
 
             try {
-                const snapshot = await getDocs(collection(db, 'signalements_add'));
+                const snapshot = await getDocs(collection(db, 'signalementAdd'));
                 let count = 0;
 
                 for (const doc of snapshot.docs) {

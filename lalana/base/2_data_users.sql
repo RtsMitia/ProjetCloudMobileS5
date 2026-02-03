@@ -54,7 +54,7 @@ WHERE u.email = 'no-token@example.com'
 -- with NULL firebase_token so the sync will fill the UID later.
 -- =====================
 INSERT INTO users (email, password, firebase_token, current_status)
-SELECT 'user1@test.com', 'password123', NULL, 1
+SELECT 'admin@test.com', 'password123', NULL, 1
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'user1@test.com');
 
 INSERT INTO users (email, password, firebase_token, current_status)

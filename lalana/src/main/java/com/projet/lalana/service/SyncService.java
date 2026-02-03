@@ -38,10 +38,12 @@ public class SyncService {
     private static final Logger logger = LoggerFactory.getLogger(SyncService.class);
 
     /**
-     * Sync only unsynced signalements with status_id = 1 to Firestore using SignalementDto.
+     * Sync only unsynced signalements with status_id = 1 to Firestore using
+     * SignalementDto.
      */
     public Map<String, Object> syncAll() {
-        // For backward compatibility keep syncAll as a lightweight push->firestore helper
+        // For backward compatibility keep syncAll as a lightweight push->firestore
+        // helper
         Map<String, Object> result = new HashMap<>();
         result.put("pushed_signalements", syncSignalements());
         result.put("deleted_signalements", deleteSignalementsValeur30());
@@ -50,36 +52,20 @@ public class SyncService {
     }
 
     /**
-     * Run a full synchronization cycle combining both sync directions and user syncs.
+     * Run a full synchronization cycle combining both sync directions and user
+     * syncs.
      * - push local signalements to Firestore
      * - remove Firestore docs with valeur=30
-     * - import signalements from Firestore into local DB (signalementService.synchronisation())
-     * - sync disabled Firebase users -> local (user histories) and delete unmatched Firebase users
+     * - import signalements from Firestore into local DB
+     * (signalementService.synchronisation())
+     * - sync disabled Firebase users -> local (user histories) and delete unmatched
+     * Firebase users
      * - push local unblocked users -> Firebase
      * Returns a map with detailed counts and snapshots.
      */
     @Transactional
     public Map<String, Object> runFullSyncCycle() {
         Map<String, Object> result = new HashMap<>();
-
-        // 1) push local -> Firestore
-        int pushed = syncSignalements();
-        result.put("pushed_signalements", pushed);
-
-        // 2) cleanup firestore
-        int delSig = deleteSignalementsValeur30();
-        int delProb = deleteProblemesValeur30();
-        result.put("deleted_signalements", delSig);
-        result.put("deleted_problemes", delProb);
-
-        // 3) import firestore -> local
-        int imported = 0;
-        try {
-            imported = signalementService.synchronisation();
-        } catch (Exception e) {
-            logger.error("Failed to import signalements from Firestore", e);
-        }
-        result.put("imported_signalements", imported);
 
         // 4) users: firebase -> local (blocked)
         List<UserHistory> blockedHistories = null;
@@ -100,20 +86,41 @@ public class SyncService {
             logger.error("Failed to push unblocked users to Firebase", e);
             result.put("reactivated", 0);
         }
+        // 3) import firestore -> local
+        int imported = 0;
+        try {
+            imported = signalementService.synchronisation();
+        } catch (Exception e) {
+            logger.error("Failed to import signalements from Firestore", e);
+        }
+        result.put("imported_signalements", imported);
+
+        // 1) push local -> Firestore
+        int pushed = syncSignalements();
+        result.put("pushed_signalements", pushed);
+
+        // 2) cleanup firestore
+        int delSig = deleteSignalementsValeur30();
+        int delProb = deleteProblemesValeur30();
+        result.put("deleted_signalements", delSig);
+        result.put("deleted_problemes", delProb);
 
         // 6) snapshots
         try {
             result.put("all_signalements", signalementService.getAll());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         try {
             result.put("all_problemes", problemeService.getAll());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         return result;
     }
 
     public int syncSignalements() {
-        // fetch signalements whose status.valeur <= 10; do not check or update firestore_synced for now
+        // fetch signalements whose status.valeur <= 10; do not check or update
+        // firestore_synced for now
         List<Signalement> rows = signalementRepository.findByStatusValeurLE10();
         int count = 0;
         Firestore db = FirestoreClient.getFirestore();
@@ -124,6 +131,7 @@ public class SyncService {
             Map<String, Object> doc = new HashMap<>();
             doc.put("id", dto.getId());
             doc.put("userId", dto.getUserId());
+            doc.put("userToken" , dto.getUserToken());  
             doc.put("x", dto.getX());
             doc.put("y", dto.getY());
             doc.put("localisation", dto.getLocalisation());
@@ -188,15 +196,14 @@ public class SyncService {
         return deleted;
     }
 
-
-
     @Transactional
     public SyncResult fullSync() {
         try {
             // 1) Import signalements from Firestore
             int importedSignalements = signalementService.synchronisation();
 
-            // 2) Sync blocked users from Firebase into local DB (creates UserHistory entries)
+            // 2) Sync blocked users from Firebase into local DB (creates UserHistory
+            // entries)
             List<UserHistory> blockedHistories = userService.getDatasFromFirebase();
 
             // 3) Push local unblocked users back to Firebase
@@ -219,11 +226,10 @@ public class SyncService {
         }
     }
 
-    
-
     @Transactional
     protected void markSignalementSynced(Integer id) {
-        Signalement s = signalementRepository.findById(id).orElseThrow(() -> new RuntimeException("Signalement not found " + id));
+        Signalement s = signalementRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Signalement not found " + id));
         s.setFirestoreSynced(true);
         signalementRepository.save(s);
     }
@@ -235,19 +241,44 @@ public class SyncService {
         private List<Signalement> signalements;
         private List<Probleme> problemes;
 
-        public int getImportedSignalements() { return importedSignalements; }
-        public void setImportedSignalements(int importedSignalements) { this.importedSignalements = importedSignalements; }
+        public int getImportedSignalements() {
+            return importedSignalements;
+        }
 
-        public int getBlockedCount() { return blockedCount; }
-        public void setBlockedCount(int blockedCount) { this.blockedCount = blockedCount; }
+        public void setImportedSignalements(int importedSignalements) {
+            this.importedSignalements = importedSignalements;
+        }
 
-        public int getReactivatedCount() { return reactivatedCount; }
-        public void setReactivatedCount(int reactivatedCount) { this.reactivatedCount = reactivatedCount; }
+        public int getBlockedCount() {
+            return blockedCount;
+        }
 
-        public List<Signalement> getSignalements() { return signalements; }
-        public void setSignalements(List<Signalement> signalements) { this.signalements = signalements; }
+        public void setBlockedCount(int blockedCount) {
+            this.blockedCount = blockedCount;
+        }
 
-        public List<Probleme> getProblemes() { return problemes; }
-        public void setProblemes(List<Probleme> problemes) { this.problemes = problemes; }
+        public int getReactivatedCount() {
+            return reactivatedCount;
+        }
+
+        public void setReactivatedCount(int reactivatedCount) {
+            this.reactivatedCount = reactivatedCount;
+        }
+
+        public List<Signalement> getSignalements() {
+            return signalements;
+        }
+
+        public void setSignalements(List<Signalement> signalements) {
+            this.signalements = signalements;
+        }
+
+        public List<Probleme> getProblemes() {
+            return problemes;
+        }
+
+        public void setProblemes(List<Probleme> problemes) {
+            this.problemes = problemes;
+        }
     }
 }

@@ -145,6 +145,40 @@ public class AuthService {
         }
     }
 
+
+    // user firebase 
+    public void createUserFirebase(User user)throws Exception {
+        try {
+            // Create user in Firebase via Admin SDK
+                CreateRequest req = new CreateRequest()
+                    .setEmail(user.getEmail())
+                    .setPassword(user.getPassword());
+
+            UserRecord userRecord = FirebaseAuth.getInstance().createUser(req);
+            String uid = userRecord.getUid();
+
+
+            try {
+                
+                user.setFirebaseToken(userRecord.getUid());
+                System.out.println("\n[DEBUG] Created Firebase user uid=" + uid + " for local user id=" + user.getEmail());
+                
+            } catch (Exception e) {
+                try {
+                    FirebaseAuth.getInstance().deleteUser(uid);
+                } catch (Exception ex) {
+                    throw ex;
+                }
+
+                throw e;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+
     /**
      * Local login fallback — verifies email/password against local DB.
      * Also checks for account locks and tracks failed attempts.

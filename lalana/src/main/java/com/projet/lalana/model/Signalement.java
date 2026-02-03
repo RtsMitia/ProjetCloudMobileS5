@@ -35,6 +35,6 @@ public class Signalement {
     @JoinColumn(name = "status_id")
     private SignalementStatus status;
 
-    @Column(name = "firestore_synced", nullable = false)
-    private Boolean firestoreSynced = false;
+    @Column(name = "firestore_synced", nullable = false , columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean firestoreSynced;
 }

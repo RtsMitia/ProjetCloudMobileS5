@@ -26,6 +26,8 @@ public class User {
     private String firebaseToken;
 
     @Column(name = "current_status", columnDefinition = "INTEGER DEFAULT 1")
-    private Integer currentStatus;
+    private Integer currentStatus; 
 
+    @Column(name = "firestore_synced", nullable = false , columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean firestoreSynced;
 }

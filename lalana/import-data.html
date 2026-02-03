@@ -256,7 +256,7 @@
             }
 
             // Supporter plusieurs clés possibles dans le JSON
-            const items = dataJson.signalementListe ?? dataJson.signalements ?? [];
+            const items = dataJson.signalementAdd ?? dataJson.signalements ?? [];
             if (!Array.isArray(items) || items.length === 0) {
                 addLog('⚠️ Aucun signalement trouvé dans firebase-test-data.json', 'warning');
                 btn.disabled = false;
@@ -276,7 +276,7 @@
                         createdAt: Timestamp.fromDate(new Date(signalement.createdAt))
                     };
 
-                    const docRef = await addDoc(collection(db, 'signalementListe'), doc);
+                    const docRef = await addDoc(collection(db, 'signalementAdd'), doc);
                     successCount++;
 
                     updateStats(items.length, successCount, errorCount);
@@ -295,7 +295,7 @@
 
         // Extracted to allow reuse after selecting a local file
         async function processAndImport(dataJson, btnRef) {
-            const items = dataJson.signalementListe ?? dataJson.signalements ?? [];
+            const items = dataJson.signalementAdd ?? dataJson.signalements ?? [];
             if (!Array.isArray(items) || items.length === 0) {
                 addLog('⚠️ Aucun signalement trouvé dans le fichier JSON.', 'warning');
                 return;
@@ -316,7 +316,7 @@
                         createdAt: Timestamp.fromDate(new Date(signalement.createdAt))
                     };
 
-                    const docRef = await addDoc(collection(db, 'signalementListe'), doc);
+                    const docRef = await addDoc(collection(db, 'signalementAdd'), doc);
                     successCount++;
                     updateStats(items.length, successCount, errorCount);
                     addLog(`✓ [${docRef.id}] ${String(signalement.description || '').substring(0, 50)}...`, 'success');
@@ -346,7 +346,7 @@
             addLog('\n🗑️ Suppression en cours...', 'warning');
 
             try {
-                const snapshot = await getDocs(collection(db, 'signalementListe'));
+                const snapshot = await getDocs(collection(db, 'signalementAdd'));
                 let count = 0;
 
                 for (const doc of snapshot.docs) {

@@ -2,15 +2,15 @@
 
 -- signalement statuses
 INSERT INTO signalement_status (id, nom, description,valeur) VALUES
-(1, 'Nouveau', 'Signalement nouvellement créé', 10),
+(1, 'Nouveau', 'Signalement nouvellement cree', 10),
 (2, 'En cours', 'Signalement en cours de traitement', 20),
-(3, 'Résolu', 'Signalement traité et résolu', 30);
+(3, 'Resolu', 'Signalement traite et resolu', 30);
 
 -- probleme statuses
 INSERT INTO probleme_status (id, nom, description, valeur) VALUES
-(1, 'Ouvert', 'Problème ouvert', 10),
-(2, 'Assigné', 'Problème assigné à une entreprise', 20),
-(3, 'Terminé', 'Travail terminé', 30);
+(1, 'Ouvert', 'Probleme ouvert', 10),
+(2, 'Assigne', 'Probleme assigne q une entreprise', 20),
+(3, 'Termine', 'Travail termine', 30);
 
 -- users
 INSERT INTO users (id, email, password) VALUES
@@ -28,7 +28,7 @@ INSERT INTO entreprise (id, nom, adresse, telephone) VALUES
 
 -- signalements
 INSERT INTO signalement (id, user_id, point_id, description, created_at, status_id) VALUES
-(1, 2, 1, 'Nid de poule important sur la chaussée', '2026-01-10 09:30:00', 1),
+(1, 2, 1, 'Nid de poule important sur la chaussee', '2026-01-10 09:30:00', 1),
 (2, 2, 2, 'Eclairage public en panne', '2026-01-12 20:15:00', 2);
 
 -- probleme linked to a signalement
