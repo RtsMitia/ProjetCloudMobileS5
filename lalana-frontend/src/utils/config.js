@@ -1,10 +1,12 @@
-function getTokenAdmin() {
+async function getTokenAdmin() {
     return "8QJvhU9Y2NObcNGvXfYPeoe87O22";
 }
 
-export function isAdminToken(token) {
-    return true;
-    // return token === getTokenAdmin();
+export async function isAdminToken(token) {
+    console.log(`isAdminToken called with token=${token}`);
+    console.log(`Admin token is ${await getTokenAdmin()}`);
+    console.log(`Comparison result: ${token === await getTokenAdmin()}`);
+    return token === await getTokenAdmin();
 }
 
 export function isLogedIn(token) {

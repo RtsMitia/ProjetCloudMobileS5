@@ -25,19 +25,19 @@ export default function UtilisateursList() {
       setIsLoading(true);
       try {
         const response = await fetch('http://localhost:8080/api/users');
-        
+
         if (!response.ok) {
           throw new Error(`Erreur HTTP! Statut: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.success && data.data) {
           // Formater les données
           const formattedData = data.data.map(user => ({
             id: user.id,
             email: user.email || "Email non disponible",
-            password: user.password, 
+            password: user.password,
             firebaseToken: user.firebaseToken,
             currentStatus: user.currentStatus || 0,
             // statut
@@ -46,7 +46,7 @@ export default function UtilisateursList() {
             displayName: user.email.split('@')[0],
             rawData: user
           }));
-          
+
           setUtilisateurs(formattedData);
           console.log(`${formattedData.length} utilisateurs chargés depuis l'API`);
         } else {
@@ -117,17 +117,17 @@ export default function UtilisateursList() {
     try {
       // Simuler une synchronisation avec Firebase pour bloquer
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       alert("Synchronisation avec Firebase (bloquer) en cours...");
       // Ici, vous ajouteriez votre logique de synchronisation réelle
       console.log("Synchronisation avec Firebase - Blocage");
-      
+
       // Exemple de mise à jour
       setUtilisateurs(prev => prev.map(user => ({
         ...user,
         // Logique de blocage Firebase
       })));
-      
+
     } catch (error) {
       console.error("Erreur de synchronisation Firebase (bloquer):", error);
       alert("Erreur lors de la synchronisation avec Firebase");
@@ -142,17 +142,17 @@ export default function UtilisateursList() {
     try {
       // Simuler une synchronisation avec Firebase pour débloquer
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       alert("Synchronisation avec Firebase (débloquer) en cours...");
       // Ici, vous ajouteriez votre logique de synchronisation réelle
       console.log("Synchronisation avec Firebase - Déblocage");
-      
+
       // Exemple de mise à jour
       setUtilisateurs(prev => prev.map(user => ({
         ...user,
         // Logique de déblocage Firebase
       })));
-      
+
     } catch (error) {
       console.error("Erreur de synchronisation Firebase (débloquer):", error);
       alert("Erreur lors de la synchronisation avec Firebase");
@@ -173,9 +173,9 @@ export default function UtilisateursList() {
 
       if (response.ok) {
         // Mettre à jour l'état local
-        setUtilisateurs(prevUsers => 
-          prevUsers.map(user => 
-            user.id === userId 
+        setUtilisateurs(prevUsers =>
+          prevUsers.map(user =>
+            user.id === userId
               ? { ...user, currentStatus: 1, statut: "Actif" }
               : user
           )
@@ -193,14 +193,14 @@ export default function UtilisateursList() {
   // Fonction pour obtenir la couleur du statut
   const getStatutColor = (currentStatus) => {
     if (currentStatus === 1) {
-      return { 
+      return {
         bgColor: "bg-emerald-100 text-emerald-800 border border-emerald-200",
         iconColor: "text-emerald-600",
         badgeColor: "bg-emerald-100 text-emerald-800",
         bgLight: "bg-emerald-50"
       };
     } else {
-      return { 
+      return {
         bgColor: "bg-rose-100 text-rose-800 border border-rose-200",
         iconColor: "text-rose-600",
         badgeColor: "bg-rose-100 text-rose-800",
@@ -212,22 +212,22 @@ export default function UtilisateursList() {
   // Filtrer les utilisateurs
   const getUtilisateursFiltres = () => {
     let filtered = utilisateurs;
-    
+
     // Filtre par statut
     if (filterStatus !== "all") {
       const statusValue = parseInt(filterStatus);
       filtered = filtered.filter(user => user.currentStatus === statusValue);
     }
-    
+
     // Filtre par recherche
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(user => 
+      filtered = filtered.filter(user =>
         user.email.toLowerCase().includes(query) ||
         user.displayName.toLowerCase().includes(query)
       );
     }
-    
+
     return filtered;
   };
 
@@ -271,6 +271,15 @@ export default function UtilisateursList() {
           </p>
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none space-x-3">
+          {/* Bouton Créer un utilisateur */}
+          <button
+            onClick={() => navigate('/backoffice/utilisateurs/create')}
+            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors"
+          >
+            <UserGroupIcon className="h-5 w-5 mr-2" />
+            Créer un utilisateur
+          </button>
+
           {/* Bouton Synchroniser Firebase - Bloquer */}
           <button
             onClick={handleSyncBlock}
@@ -324,10 +333,10 @@ export default function UtilisateursList() {
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          
+
           <div className="flex items-center gap-2">
             <FunnelIcon className="h-5 w-5 text-gray-500" />
-            <select 
+            <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -347,7 +356,7 @@ export default function UtilisateursList() {
             <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">Aucun utilisateur trouvé</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {searchQuery || filterStatus !== "all" 
+              {searchQuery || filterStatus !== "all"
                 ? "Essayez de modifier vos critères de recherche"
                 : "Aucun utilisateur n'a été enregistré pour le moment"}
             </p>
@@ -377,7 +386,7 @@ export default function UtilisateursList() {
               <tbody className="divide-y divide-gray-200 bg-white">
                 {utilisateursFiltres.map((user) => {
                   const statutInfo = getStatutColor(user.currentStatus);
-                  
+
                   return (
                     <tr key={user.id} className="hover:bg-gray-50">
                       <td className="py-4 pl-4 pr-3">
@@ -457,13 +466,13 @@ export default function UtilisateursList() {
                               <span className="text-sm">Débloquer</span>
                             </button>
                           )}
-                            <button
-                              onClick={() => handleModifierUtilisateur(user.id)}
-                              className="inline-flex items-center px-3 py-2 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
-                              title="Modifier l'utilisateur"
-                            >
-                              Modifier
-                            </button>
+                          <button
+                            onClick={() => handleModifierUtilisateur(user.id)}
+                            className="inline-flex items-center px-3 py-2 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                            title="Modifier l'utilisateur"
+                          >
+                            Modifier
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -511,7 +520,7 @@ export default function UtilisateursList() {
               </div>
               <div className="text-right">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                  {utilisateurs.length > 0 
+                  {utilisateurs.length > 0
                     ? `${Math.round((utilisateurs.filter(u => u.currentStatus === 1).length / utilisateurs.length) * 100)}%`
                     : '0%'
                   }
@@ -536,7 +545,7 @@ export default function UtilisateursList() {
               </div>
               <div className="text-right">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
-                  {utilisateurs.length > 0 
+                  {utilisateurs.length > 0
                     ? `${Math.round((utilisateurs.filter(u => u.currentStatus === 0).length / utilisateurs.length) * 100)}%`
                     : '0%'
                   }

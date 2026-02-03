@@ -12,7 +12,8 @@ import {
 } from "@heroicons/react/24/outline";
 import StatusFilter from "./StatusFilter";
 import { useNavigate } from "react-router-dom";
-import { isAdminToken , isLogedIn } from "../utils/config";
+import { isAdminToken, isLogedIn } from "../utils/config";
+import { useEffect, useState } from "react";
 
 
 function MapControls({
@@ -40,12 +41,33 @@ function MapControls({
   const handleBackOfficeClick = () => {
     navigate("/backoffice");
   };
-  
+
   const handleLoginClick = () => {
     navigate("/login");
   };
-  const token = localStorage.getItem("token") || "";
-  
+  const handleLogoutClick = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    navigate("/");
+  }
+
+  const token = localStorage.getItem("authToken") || "";
+
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(isLogedIn(token));
+  }, [token]);
+
+  useEffect(() => {
+    async function checkAdmin() {
+      const result = await isAdminToken(token);
+      setIsAdmin(result);
+    }
+    checkAdmin();
+
+  }, [token]);
 
   return (
     <>
@@ -67,7 +89,7 @@ function MapControls({
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2 mt-2 sm:mt-0">
             {/* Barre de recherche */}
             <div className="relative">
@@ -80,7 +102,7 @@ function MapControls({
               />
               <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             </div>
-            
+
             <button
               onClick={onToggleList}
               className={`flex items-center gap-1 px-3 py-2 text-sm ${showList ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'} rounded-lg transition-colors`}
@@ -88,22 +110,22 @@ function MapControls({
               <ListBulletIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Liste</span>
             </button>
-            {isAdminToken(token) && (
-            <button 
-              className={`flex items-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors`}
-              onClick={handleBackOfficeClick}
-            >
-              <ListBulletIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">BackOffice</span>
+            {isAdmin && (
+              <button
+                className={`flex items-center gap-1 px-3 py-2 text-sm rounded-lg transition-colors`}
+                onClick={handleBackOfficeClick}
+              >
+                <ListBulletIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">BackOffice</span>
 
-            </button>
-            ) } 
-            
+              </button>
+            )}
+
             <button
               onClick={onToggleFullscreen}
               className="flex items-center gap-1 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
             >
-              {isFullscreen ? (  
+              {isFullscreen ? (
                 <>
                   <ArrowsPointingInIcon className="h-4 w-4" />
                   <span className="hidden sm:inline">Réduire</span>
@@ -115,15 +137,26 @@ function MapControls({
                 </>
               )}
             </button>
+            {
+              isLoggedIn ? (
+                <button
+                  onClick={handleLogoutClick}
+                  className="flex items-center gap-1 px-3 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                >
+                  <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handleLoginClick}
+                  className="flex items-center gap-1 px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">Login</span>
+                </button>
+              )
+            }
 
-            <button
-              onClick={handleLoginClick}
-              className="flex items-center gap-1 px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            >
-              <ArrowRightOnRectangleIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Login</span>
-            </button>
-            
             {selectedProblemId && (
               <button
                 onClick={onClearSelection}
@@ -143,7 +176,7 @@ function MapControls({
               <FunnelIcon className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">Filtres:</span>
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center">
                 <input
@@ -158,7 +191,7 @@ function MapControls({
                   Signalements ({signalementCount})
                 </label>
               </div>
-              
+
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -172,8 +205,8 @@ function MapControls({
                   Problèmes ({problemeCount})
                 </label>
               </div>
-              
-              <StatusFilter 
+
+              <StatusFilter
                 filterStatus={filterStatus}
                 onFilterChange={onFilterChange}
                 compact={true}
