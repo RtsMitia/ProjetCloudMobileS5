@@ -104,15 +104,6 @@ public class SyncService {
         int delProb = deleteProblemesValeur30();
         result.put("deleted_signalements", delSig);
         result.put("deleted_problemes", delProb);
-
-        // 5) cleanup firestore
-        int delSig = deleteSignalementsValeur30();
-        int delProb = deleteProblemesValeur30();
-        result.put("deleted_signalements", delSig);
-        result.put("deleted_problemes", delProb);
-
-
-
         
         // 6) snapshots
         try {
@@ -128,8 +119,6 @@ public class SyncService {
     }
 
     public int syncSignalements() {
-        // fetch signalements whose status.valeur <= 10; do not check or update
-        // firestore_synced for now
         List<Signalement> rows = signalementRepository.findByStatusValeurLE10();
         int count = 0;
         Firestore db = FirestoreClient.getFirestore();
@@ -153,7 +142,6 @@ public class SyncService {
                 DocumentReference ref = db.collection("signalementListe").document(docId);
                 ApiFuture<WriteResult> w = ref.set(doc);
                 w.get();
-                // mark local signalement as synced so it won't be re-synced
                 markSignalementSynced(s.getId());
                 count++;
             } catch (Exception e) {
