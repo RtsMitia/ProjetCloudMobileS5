@@ -6,6 +6,7 @@ import L from "leaflet";
 import MapControls from "./MapControls";
 import MapController from "./MapController";
 import ProblemListPanel from "./ProblemListPanel";
+import SignalementListPanel from "./SignalementListPanel";
 import ProblemMarker from "./ProblemMarker";
 import SignalementMarker from "./SignalementMarker";
 
@@ -25,11 +26,13 @@ L.Icon.Default.mergeOptions({
 function MapOffLine() {
   const [signalement, setSignalement] = useState([]);
   const [probleme, setProbleme] = useState([]);
-  const [showSignalements, setShowSignalements] = useState(true); 
+  const [showSignalements, setShowSignalements] = useState(true);
   const [showProblemes, setShowProblemes] = useState(true);
   const [showList, setShowList] = useState(false);
+  const [listType, setListType] = useState("problemes"); // "problemes" ou "signalements"
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedProblemId, setSelectedProblemId] = useState(null);
+  const [selectedSignalementId, setSelectedSignalementId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const mapRef = useRef();
@@ -90,13 +93,13 @@ function MapOffLine() {
     const fetchSignalements = async () => {
       try {
         const response = await fetch('http://localhost:8080/api/signalement');
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.success && data.data) {
           const formattedData = formatSignalementData(data.data);
           setSignalement(formattedData);
@@ -114,13 +117,13 @@ function MapOffLine() {
     const fetchProblemes = async () => {
       try {
         const response = await fetch('http://localhost:8080/api/problemes');
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.success && data.data) {
           const formattedData = formatProblemeData(data.data);
           setProbleme(formattedData);
@@ -183,78 +186,6 @@ function MapOffLine() {
     // Données mockées pour les problèmes (fallback)
     const getMockProblemes = () => {
       return [
-        {
-          id: 1,
-          surface: 4.5,
-          budgetEstime: 2500000,
-          entrepriseId: 1,
-          entrepriseName: "Entreprise A",
-          entrepriseContact: "0123456789",
-          entrepriseAdresse: "1 Rue Exemple, 75001 Paris",
-          statusId: 1,
-          statusNom: "Ouvert",
-          statusValeur: 10,
-          signalementId: 1,
-          userId: 1,
-          userEmail: "alice@example.com",
-          x: 47.5218,
-          y: -18.9089,
-          localisation: "Antananarivo - Avenue de l'Independance",
-          description: "Nid-de-poule important sur la chaussee principale, risque pour les vehicules",
-          signalementCreatedAt: "2024-01-15T09:30:00",
-          signalementStatus: "Nouveau",
-          signalementValeur: 10,
-          statusLiebelle: "Ouvert",
-          createdAt: "2024-01-15T09:30:00",
-        },
-        {
-          id: 2,
-          surface: 12,
-          budgetEstime: 850000,
-          entrepriseId: 2,
-          entrepriseName: "Entreprise B",
-          entrepriseContact: "0987654321",
-          entrepriseAdresse: "2 Avenue Exemple, 69001 Lyon",
-          statusId: 2,
-          statusNom: "Assigné",
-          statusValeur: 20,
-          signalementId: 2,
-          userId: 2,
-          userEmail: "bob@example.com",
-          x: 49.3958,
-          y: -18.1443,
-          localisation: "Toamasina - Port",
-          description: "eclairage public defectueux depuis 3 jours, quartier sombre le soir",
-          signalementCreatedAt: "2024-01-16T14:20:00",
-          signalementStatus: "En cours",
-          signalementValeur: 20,
-          statusLiebelle: "Assigné",
-          createdAt: "2024-01-16T14:20:00",
-        },
-        {
-          id: 3,
-          surface: 8.2,
-          budgetEstime: 1500000,
-          entrepriseId: 1,
-          entrepriseName: "Entreprise A",
-          entrepriseContact: "0123456789",
-          entrepriseAdresse: "1 Rue Exemple, 75001 Paris",
-          statusId: 1,
-          statusNom: "Ouvert",
-          statusValeur: 10,
-          signalementId: 3,
-          userId: 1,
-          userEmail: "alice@example.com",
-          x: 47.0331,
-          y: -19.8689,
-          localisation: "Antsirabe - Centre ville",
-          description: "Caniveau bouche causant des inondations lors des pluies",
-          signalementCreatedAt: "2024-01-17T11:45:00",
-          signalementStatus: "Nouveau",
-          signalementValeur: 10,
-          statusLiebelle: "Ouvert",
-          createdAt: "2024-01-17T11:45:00",
-        },
       ];
     };
 
@@ -265,7 +196,7 @@ function MapOffLine() {
   // Filtrage des données
   const getProblemesFiltres = () => {
     let filtered = probleme;
-    
+
     if (filterStatus !== "all") {
       switch (filterStatus) {
         case "pending":
@@ -279,10 +210,10 @@ function MapOffLine() {
           break;
       }
     }
-    
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(p => 
+      filtered = filtered.filter(p =>
         p.localisation.toLowerCase().includes(query) ||
         p.description.toLowerCase().includes(query) ||
         p.userEmail.toLowerCase().includes(query) ||
@@ -290,13 +221,13 @@ function MapOffLine() {
         (p.entrepriseAdresse && p.entrepriseAdresse.toLowerCase().includes(query))
       );
     }
-    
+
     return filtered;
   };
 
   const getSignalementsFiltres = () => {
     let filtered = signalement;
-    
+
     if (filterStatus !== "all") {
       switch (filterStatus) {
         case "pending":
@@ -310,27 +241,36 @@ function MapOffLine() {
           break;
       }
     }
-    
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(s => 
+      filtered = filtered.filter(s =>
         s.localisation.toLowerCase().includes(query) ||
         s.description.toLowerCase().includes(query) ||
         s.userEmail.toLowerCase().includes(query)
       );
     }
-    
+
     return filtered;
   };
 
   const problemesFiltres = getProblemesFiltres();
   const signalementsFiltres = getSignalementsFiltres();
-  const selectedProblem = selectedProblemId 
-    ? probleme.find(p => p.id === selectedProblemId) 
+  const selectedProblem = selectedProblemId
+    ? probleme.find(p => p.id === selectedProblemId)
     : null;
 
   const handleProblemClick = (problemId) => {
     setSelectedProblemId(problemId);
+    setSelectedSignalementId(null);
+    if (window.innerWidth < 768) {
+      setShowList(false);
+    }
+  };
+
+  const handleSignalementClick = (signalementId) => {
+    setSelectedSignalementId(signalementId);
+    setSelectedProblemId(null);
     if (window.innerWidth < 768) {
       setShowList(false);
     }
@@ -338,6 +278,7 @@ function MapOffLine() {
 
   const handleClearSelection = () => {
     setSelectedProblemId(null);
+    setSelectedSignalementId(null);
   };
 
   const handleFullscreenToggle = () => {
@@ -392,14 +333,14 @@ function MapOffLine() {
               className="h-full w-full"
               ref={mapRef}
             >
-              <MapController 
-                center={[-18.8792, 47.5079]} 
+              <MapController
+                center={[-18.8792, 47.5079]}
                 zoom={13}
                 selectedProblemId={selectedProblemId}
                 problems={probleme}
                 signals={signalement}
               />
-              
+
               <TileLayer
                 url="/tiles/{z}/{x}/{y}.png"
                 tileSize={256}
@@ -428,18 +369,58 @@ function MapOffLine() {
           </div>
         </div>
 
-        {/* Panneau de liste */}
+        {/* Panneau de liste avec switch */}
         {showList && (
-          <ProblemListPanel
-            problems={problemesFiltres}
-            selectedProblemId={selectedProblemId}
-            onProblemClick={handleProblemClick}
-            onClose={() => setShowList(false)}
-            filterStatus={filterStatus}
-            onFilterChange={setFilterStatus}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          />
+          <div className="w-full md:w-1/3 bg-white border-l border-gray-200 shadow-lg flex flex-col">
+            {/* Boutons de switch */}
+            <div className="flex border-b border-gray-200 bg-gray-50">
+              <button
+                onClick={() => setListType("problemes")}
+                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${listType === "problemes"
+                    ? "bg-white text-blue-600 border-b-2 border-blue-600"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
+              >
+                Problèmes ({problemesFiltres.length})
+              </button>
+              <button
+                onClick={() => setListType("signalements")}
+                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${listType === "signalements"
+                    ? "bg-white text-rose-600 border-b-2 border-rose-600"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
+              >
+                Signalements ({signalementsFiltres.length})
+              </button>
+            </div>
+
+            {/* Contenu du panneau */}
+            <div className="flex-1 overflow-y-auto">
+              {listType === "problemes" ? (
+                <ProblemListPanel
+                  problems={problemesFiltres}
+                  selectedProblemId={selectedProblemId}
+                  onProblemClick={handleProblemClick}
+                  onClose={() => setShowList(false)}
+                  filterStatus={filterStatus}
+                  onFilterChange={setFilterStatus}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                />
+              ) : (
+                <SignalementListPanel
+                  signalements={signalementsFiltres}
+                  selectedSignalementId={selectedSignalementId}
+                  onSignalementClick={handleSignalementClick}
+                  onClose={() => setShowList(false)}
+                  filterStatus={filterStatus}
+                  onFilterChange={setFilterStatus}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                />
+              )}
+            </div>
+          </div>
         )}
       </div>
 

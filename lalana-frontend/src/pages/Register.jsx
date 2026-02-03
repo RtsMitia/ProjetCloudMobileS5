@@ -101,14 +101,13 @@ function Register() {
             }
 
             // Succès de l'inscription
-            setSuccess("Compte créé avec succès ! Redirection vers la connexion...");
+            setSuccess("Compte créé avec succès ! Redirection...");
             console.log("Inscription réussie:", data);
 
-            // Redirection vers la page de connexion après 2 secondes
+            // Redirection vers la liste des utilisateurs après 1.5 secondes
             setTimeout(() => {
-                navigate("/login");
-            }, 2000);
-
+                navigate("/backoffice/utilisateurs");
+            }, 1500);
         } catch (error) {
             console.error("Erreur d'inscription:", error);
             setError(error.message);
@@ -289,8 +288,8 @@ function Register() {
                                 type="submit"
                                 disabled={loading || success}
                                 className={`group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white ${loading || success
-                                        ? "bg-blue-400 cursor-not-allowed"
-                                        : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    ? "bg-blue-400 cursor-not-allowed"
+                                    : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                     } transition-all duration-200 shadow-sm`}
                             >
                                 <span className="absolute left-0 inset-y-0 flex items-center pl-3">

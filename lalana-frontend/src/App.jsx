@@ -8,19 +8,20 @@ import ProblemesList from './pages/ProblemesList.jsx';
 import UtilisateursList from './pages/UtilisateursList.jsx';
 import UtilisateurEdit from './pages/UtilisateurEdit.jsx';
 import RapportTech from './pages/RapportTech.jsx';
+import ProtectedRoute from './component/ProtectedRoute.jsx';
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path='/backoffice' >
+      <Route path='/backoffice' element={<ProtectedRoute />} >
         <Route index element={<BackOffice />} />
         <Route path="signalements" element={<SignalementList />} />
         <Route path="problemes" element={<ProblemesList />} />
         <Route path="utilisateurs" element={<UtilisateursList />} />
         <Route path="utilisateurs/:id/edit" element={<UtilisateurEdit />} />
+        <Route path="utilisateurs/create" element={<Register />} />
         <Route path="rapportTech/:id" element={<RapportTech />} />
       </Route>
     </Routes>

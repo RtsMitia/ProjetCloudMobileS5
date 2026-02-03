@@ -328,24 +328,16 @@ public class AuthService {
             Map<String, Object> out = new HashMap<>();
             out.put("local", true);
             Map<String, Object> u = new HashMap<>();
+
             u.put("id", user.getId());
             u.put("email", user.getEmail());
+            u.put("token", user.getFirebaseToken());
             out.put("user", u);
-            System.out.println("Authenticated " + email + " via local DB");
+
+            System.out.println("Authenticated " + email + " via local DB" + user.getFirebaseToken());
             return out;
         } catch (Exception e) {
-            // On any exception calling Firebase, fallback to local login here
-            System.out.println("Firebase sign-in failed for " + email + ", falling back to local login: " + e.getMessage());
-            System.out.println("podpofpofpsofpsofs");
-            User user = login(email, password);
-            Map<String, Object> out = new HashMap<>();
-            out.put("local", true);
-            Map<String, Object> u = new HashMap<>();
-            u.put("id", user.getId());
-            u.put("email", user.getEmail());
-            out.put("user", u);
-            System.out.println("Authenticatedeee " + email + " via local DB");
-            return out;
+            throw new ServiceException("Échec de l'authentification: " + e.getMessage(), e);
         }
     }
 

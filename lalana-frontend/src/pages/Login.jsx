@@ -66,16 +66,17 @@ function Login() {
       }
 
       // Vérifier si un token est présent dans la réponse
-      if (!data.token || data.token.trim() === "") {
+      if (!data.user.token || data.user.token.trim() === "") {
         throw new Error("Vous n'êtes pas encore inscrit. Veuillez créer un compte.");
       }
 
       // Stocker le token et les informations utilisateur dans localStorage
-      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("authToken", data.user.token);
       localStorage.setItem("user", JSON.stringify({
         id: data.id,
         email: data.email,
         role: data.role || "user",
+        authToken: data.user.token,
         isAuthenticated: true,
       }));
 
