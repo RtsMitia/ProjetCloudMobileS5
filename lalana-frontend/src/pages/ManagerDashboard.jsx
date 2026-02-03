@@ -261,18 +261,6 @@ export default function ManagerDashboard() {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Data source toggle */}
-              <button
-                onClick={toggleDataSource}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  useTestData
-                    ? "bg-amber-50 text-amber-700 border border-amber-200"
-                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                }`}
-              >
-                {useTestData ? "Données Test" : "Données API"}
-              </button>
-
               {/* Refresh button */}
               <button
                 onClick={handleRefresh}
