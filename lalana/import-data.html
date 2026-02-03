@@ -267,7 +267,7 @@
             }
 
             // Supporter plusieurs clés possibles dans le JSON
-            const items = dataJson.signalementListe ?? dataJson.signalements ?? [];
+            const items = dataJson.signalementAdd ?? dataJson.signalements ?? [];
             if (!Array.isArray(items) || items.length === 0) {
                 addLog('⚠️ Aucun signalement trouvé dans firebase-test-data.json', 'warning');
                 btn.disabled = false;
@@ -306,7 +306,7 @@
 
         // Extracted to allow reuse after selecting a local file
         async function processAndImport(dataJson, btnRef) {
-            const items = dataJson.signalementListe ?? dataJson.signalements ?? [];
+            const items = dataJson.signalementAdd ?? dataJson.signalements ?? [];
             if (!Array.isArray(items) || items.length === 0) {
                 addLog('⚠️ Aucun signalement trouvé dans le fichier JSON.', 'warning');
                 return;

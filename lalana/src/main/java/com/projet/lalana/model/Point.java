@@ -25,6 +25,6 @@ public class Point {
     @Column(length = 255, nullable = false)
     private String localisation;
 
-    @Column(name = "firestore_synced", nullable = false)
-    private Boolean firestoreSynced = false;
+    @Column(name = "firestore_synced", nullable = false , columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean firestoreSynced  ;
 }

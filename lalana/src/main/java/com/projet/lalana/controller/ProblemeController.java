@@ -56,6 +56,20 @@ public class ProblemeController {
         }
     }
 
+    @PostMapping("/{id}/processer")
+    public ApiResponse processer(@PathVariable Integer id) {
+        try {
+            Probleme updated = problemeService.processer(id);
+            return new ApiResponse(true, "Problème mis en cours de traitement", updated);
+        } catch (ServiceException se) {
+            logger.error("ServiceException processer probleme id={}", id, se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error processer probleme id={}", id, e);
+            return new ApiResponse(false, "Erreur serveur lors du traitement du problème", null);
+        }
+    }
+
     @PostMapping("/{id}/resoudre")
     public ApiResponse resoudre(@PathVariable Integer id) {
         try {
@@ -70,7 +84,6 @@ public class ProblemeController {
         }
     }
 
-    
     @GetMapping("/valeur/10")
     public ApiResponse getProblemesValeur10() {
         try {
@@ -83,17 +96,4 @@ public class ProblemeController {
         }
     }
 
-    @PostMapping("/{id}/resolve")
-    public ApiResponse resolveProbleme(@PathVariable Integer id) {
-        try {
-            Probleme updated = problemeService.markResolved(id);
-            return new ApiResponse(true, "Problème marqué comme résolu", ProblemeDto.fromEntity(updated));
-        } catch (ServiceException se) {
-            logger.error("ServiceException resolveProbleme id={}", id, se);
-            return new ApiResponse(false, se.getMessage(), null);
-        } catch (Exception e) {
-            logger.error("Unexpected error resolveProbleme id={}", id, e);
-            return new ApiResponse(false, "Erreur serveur lors du changement de statut du problème", null);
-        }
-    }
 }

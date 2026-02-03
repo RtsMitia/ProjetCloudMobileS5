@@ -17,21 +17,23 @@ public class SignalementDto {
 
     private Integer id;
     private Integer userId;
+    private String userToken; 
 
-    private Double x;
-    private Double y;
-    private String localisation;
+    private Double x; 
+    private Double y; 
+    private String localisation; 
 
-    private String description;
-    private LocalDateTime createdAt;
+    private String description; 
+    private LocalDateTime createdAt; 
 
     private String statusLibelle;
-    private Integer valeur;
+    private Integer valeur; 
 
     public static SignalementDto fromEntity(Signalement s) {
         if (s == null) return null;
         SignalementDto.SignalementDtoBuilder b = SignalementDto.builder()
                 .id(s.getId())
+                .userToken(s.getUser() != null ? s.getUser().getFirebaseToken() : null)
                 .description(s.getDescription())
                 .createdAt(s.getCreatedAt());
         Point p = s.getPoint();
@@ -45,5 +47,21 @@ public class SignalementDto {
         }
 
         return b.build();
+    }
+    
+
+
+    public String toString () {
+        return "SignalementDto{id=" + id +
+                ", userId=" + userId +
+                ", userToken='" + userToken + '\'' +
+                ", x=" + x +
+                ", y=" + y +
+                ", localisation='" + localisation + '\'' +
+                ", description='" + description + '\'' +
+                ", createdAt=" + createdAt +
+                ", statusLibelle='" + statusLibelle + '\'' +
+                ", valeur=" + valeur +
+                '}';
     }
 }

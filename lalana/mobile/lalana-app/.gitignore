@@ -12,6 +12,7 @@
 Thumbs.db
 UserInterfaceState.xcuserstate
 $RECYCLE.BIN/
+node_modules
 
 *.log
 log.txt
@@ -26,8 +27,9 @@ npm-debug.log*
 !/.vscode/extensions.json
 /coverage
 /dist
-/node_modules
 /platforms
 /plugins
 /www
+
+
 

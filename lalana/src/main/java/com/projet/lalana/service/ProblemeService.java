@@ -22,6 +22,9 @@ import java.util.Optional;
 public class ProblemeService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProblemeService.class);
+    private final Integer CREATE_STATUS_VALUE = 10;
+    private final Integer PROCESSING_STATUS_VALUE = 20;
+    private final Integer RESOLVED_STATUS_VALUE = 30;
 
     private final ProblemeRepository problemeRepository;
     private final ProblemeStatusRepository problemeStatusRepository;
@@ -46,15 +49,44 @@ public class ProblemeService {
     }
 
     @Transactional
+    public Probleme processer(Integer id) {
+        try {
+            Probleme probleme = problemeRepository.findById(id)
+                    .orElseThrow(() -> new ServiceException("Problème non trouvé id=" + id));
+
+            ProblemeStatus processingStatus = problemeStatusRepository.findByValeur(PROCESSING_STATUS_VALUE)
+                    .orElseThrow(() -> new ServiceException(
+                            "[DEBUG] Status en cours introuvable (VALEUR=" + PROCESSING_STATUS_VALUE + ")"));
+
+            probleme.setProblemeStatus(processingStatus);
+            Probleme saved = problemeRepository.save(probleme);
+
+            ProblemeHistory history = new ProblemeHistory();
+            history.setProbleme(saved);
+            history.setStatus(processingStatus);
+            history.setChangedAt(LocalDateTime.now());
+            problemeHistoryRepository.save(history);
+
+            return saved;
+        } catch (ServiceException se) {
+            throw se;
+        } catch (Exception e) {
+            logger.error("Erreur lors du traitement du problème id={}", id, e);
+            throw new ServiceException("Erreur lors du traitement du problème id=" + id, e);
+        }
+    }
+
+    @Transactional
     public Probleme resoudre(Integer id) {
         try {
             Probleme probleme = problemeRepository.findById(id)
                     .orElseThrow(() -> new ServiceException("Problème non trouvé id=" + id));
 
-            // Assumption: status with id=2 corresponds to the "résolu/terminé" status in the database.
-            final Integer RESOLVED_STATUS_ID = 2;
-            ProblemeStatus resolvedStatus = problemeStatusRepository.findById(RESOLVED_STATUS_ID)
-                    .orElseThrow(() -> new ServiceException("Status résolu introuvable (id=" + RESOLVED_STATUS_ID + ")"));
+            // Assumption: status with id=2 corresponds to the "résolu/terminé" status in
+            // the database.
+            ProblemeStatus resolvedStatus = problemeStatusRepository.findByValeur(RESOLVED_STATUS_VALUE)
+                    .orElseThrow(() -> new ServiceException(
+                            "[DEBUG] Status résolu introuvable (VALEUR=" + RESOLVED_STATUS_VALUE + ")"));
 
             probleme.setProblemeStatus(resolvedStatus);
             Probleme saved = problemeRepository.save(probleme);
@@ -73,6 +105,7 @@ public class ProblemeService {
             throw new ServiceException("Erreur lors de la résolution du problème id=" + id, e);
         }
     }
+
     public List<Probleme> findByValeur(Integer valeur) {
         try {
             return problemeRepository.findByValeur(valeur);
@@ -82,24 +115,4 @@ public class ProblemeService {
         }
     }
 
-    @Transactional
-    public Probleme markResolved(Integer id) {
-        try {
-            Probleme p = problemeRepository.findById(id)
-                    .orElseThrow(() -> new ServiceException("Problème non trouvé id=" + id));
-
-            ProblemeStatus resolved = problemeStatusRepository.findByValeur(30)
-                    .orElseThrow(() -> new ServiceException("Status 'resolu' (valeur=30) introuvable"));
-
-            p.setProblemeStatus(resolved);
-            return problemeRepository.save(p);
-        } catch (ServiceException se) {
-            throw se;
-        } catch (Exception e) {
-            logger.error("Erreur lors de markResolved probleme id={}", id, e);
-            throw new ServiceException("Erreur lors du changement de statut du problème", e);
-        }
-    }
-
-    
 }

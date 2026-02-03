@@ -47,6 +47,7 @@ public class UserService {
                 throw new ServiceException("Utilisateur non trouvé id=" + userId);
             }
             User user = uopt.get();
+            user.setFirestoreSynced(false);
 
             UserHistory history = new UserHistory();
             history.setUser(user);
@@ -172,35 +173,34 @@ public class UserService {
             // Ensure FirebaseApp is initialized
             firebaseService.ensureInitialized();
 
-            List<User> allUsers = userRepository.findAll();
+            List<User> allUsers = userRepository.findNotSyncedUsers();
             List<User> synced = new ArrayList<>();
 
             for (User user : allUsers) {
                 try {
 
                     if (user.getFirebaseToken() == null || user.getFirebaseToken().isEmpty()) {
-                        continue;
+                        authService.createUserFirebase(user);
                     }
 
                     // Use denormalized currentStatus for faster check
                     Integer currentStatus = user.getCurrentStatus() != null ? user.getCurrentStatus() : -1;
 
                
-                    if(!user.getFirestoreSynced()) {
-                        user.setFirestoreSynced(true);
-                        if (currentStatus == UNBLOCKED_STATUS)  {
-                        try {
-                                firebaseService.getAuth().updateUser(
-                                    new UpdateRequest(user.getFirebaseToken())
+                    if (currentStatus == UNBLOCKED_STATUS && user.getFirestoreSynced()) {
+                        try { 
+                            firebaseService.getAuth().updateUser(
+                                new UpdateRequest(user.getFirebaseToken())
                                     .setDisabled(false)
-                                );
-                                logger.info("Utilisateur Firebase uid={} activé (local user id={})", user.getFirebaseToken(), user.getId());
-                            } catch (Exception e) {
-                                logger.error("Erreur lors de l'activation Firebase pour uid={}", user.getFirebaseToken(), e);
-                            }
-                        }
-                        synced.add(user);
+                            );
+                            synced.add(user);
+                            logger.info("Utilisateur Firebase uid={} activé (local user id={})", user.getFirebaseToken(), user.getId());
+                        } catch (Exception e) {
+                            logger.error("Erreur lors de l'activation Firebase pour uid={}", user.getFirebaseToken(), e);
+                        } 
                     } 
+                    user.setFirestoreSynced(true);
+                    userRepository.save(user);
                 } catch (Exception e) {
                     logger.error("Erreur lors du traitement de l'utilisateur local id={}", user.getId(), e);
                 }
@@ -213,6 +213,9 @@ public class UserService {
         }
     }
 
+    @Transactional
+
+
     public List<User> getAllUsers() {
         try {
             return userRepository.findAll();
@@ -222,6 +225,20 @@ public class UserService {
         }
     }
 
+    public User getUserById(Integer id) {
+        try {
+            Optional<User> uopt = userRepository.findById(id);
+            if (uopt.isEmpty()) {
+                throw new ServiceException("Utilisateur non trouvé id=" + id);
+            }
+            return uopt.get();
+        } catch (ServiceException se) {
+            throw se;
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération de l'utilisateur id={}", id, e);
+            throw new ServiceException("Erreur lors de la récupération de l'utilisateur", e);
+        }
+    }
 
     // Firebase initialization moved to FirebaseService
 
