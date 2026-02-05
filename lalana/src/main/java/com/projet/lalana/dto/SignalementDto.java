@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -28,6 +30,7 @@ public class SignalementDto {
 
     private String statusLibelle;
     private Integer valeur; 
+    private List<SignalementImageDTO> images;
 
     public static SignalementDto fromEntity(Signalement s) {
         if (s == null) return null;
@@ -46,7 +49,11 @@ public class SignalementDto {
             b.valeur(s.getStatus().getValeur());
         }
 
-        return b.build();
+        // Signalement entity currently doesn't have an images relationship in the model.
+        // Initialize images as empty list for now; it may be populated by service layer when available.
+        SignalementDto dto = b.build();
+        dto.setImages(new ArrayList<>());
+        return dto;
     }
     
 

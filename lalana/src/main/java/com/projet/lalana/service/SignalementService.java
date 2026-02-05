@@ -18,6 +18,9 @@ import com.projet.lalana.repository.ProblemeRepository;
 import com.projet.lalana.repository.ProblemeStatusRepository;
 
 import com.projet.lalana.dto.RapportTech;
+import com.projet.lalana.dto.SignalementImageDTO;
+import com.projet.lalana.model.SignalementImage;
+import com.projet.lalana.repository.SignalementImageRepository;
 
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentSnapshot;
@@ -56,6 +59,7 @@ public class SignalementService {
     private final FirestoreService firestoreService;
     private final PointRepository pointRepository;
     private final UserRepository userRepository;
+    private final SignalementImageRepository signalementImageRepository;
     private final ProblemeRepository problemeRepository;
     private final ProblemeHistoryRepository problemeHistoryRepository;
     private final ProblemeStatusRepository problemeStatusRepository;
@@ -162,7 +166,33 @@ public class SignalementService {
             b.userToken(asString(doc.get("userToken")));
         }
 
-        return b.build();
+        // extract images array if present: expected format is a list of maps with keys
+        // "online_path" and "file_name"
+        SignalementDto dto = b.build();
+        try {
+            Object imagesObj = doc.get("images");
+            if (imagesObj instanceof java.util.List) {
+                java.util.List imgs = (java.util.List) imagesObj;
+                java.util.List<com.projet.lalana.dto.SignalementImageDTO> imageDtos = new java.util.ArrayList<>();
+                for (Object o : imgs) {
+                    if (o instanceof java.util.Map) {
+                        java.util.Map map = (java.util.Map) o;
+                        String online = asString(map.get("online_path"));
+                        String fileName = asString(map.get("file_name"));
+                        SignalementImageDTO imgDto = new SignalementImageDTO();
+                        imgDto.setCheminOnline(online);
+                        imgDto.setNomFichier(fileName);
+                        imgDto.setCheminLocal(null);
+                        imageDtos.add(imgDto);
+                    }
+                }
+                dto.setImages(imageDtos);
+            }
+        } catch (Exception exImg) {
+            logger.warn("Impossible d'extraire les images du document Firestore {}: {}", doc.getId(), exImg.getMessage());
+        }
+
+        return dto;
     }
 
     private String asString(Object o) {
@@ -198,7 +228,7 @@ public class SignalementService {
             List<SignalementDto> dtos = getAllSignalementsFromFirestore();
             SignalementStatus status = statusSignalementRepository.findByValeur(10)
                     .orElseThrow(() -> new ServiceException("Statut initial du signalement non trouvé"));
-            for (SignalementDto dto : dtos) {
+                for (SignalementDto dto : dtos) {
 
                 try {
                     // Build Signalement from DTO
@@ -249,8 +279,28 @@ public class SignalementService {
                     history.setStatus(status);
                     signalementHistoryRepository.save(history);
 
-                    signalementRepository.save(s);
+                    Signalement saved = signalementRepository.save(s);
                     signalementHistoryRepository.save(history);
+
+                    // Persist images associated to this signalement (if any)
+                    try {
+                        if (dto.getImages() != null) {
+                            for (SignalementImageDTO imgDto : dto.getImages()) {
+                                try {
+                                    SignalementImage img = new SignalementImage();
+                                    img.setSignalement(saved);
+                                    img.setCheminLocal(imgDto.getCheminLocal());
+                                    img.setCheminOnline(imgDto.getCheminOnline());
+                                    img.setNomFichier(imgDto.getNomFichier());
+                                    signalementImageRepository.save(img);
+                                } catch (Exception imgEx) {
+                                    logger.warn("Impossible de sauvegarder l'image pour signalement {}: {}", saved.getId(), imgEx.getMessage());
+                                }
+                            }
+                        }
+                    } catch (Exception exImgAll) {
+                        logger.warn("Erreur lors de la sauvegarde des images du signalement: {}", exImgAll.getMessage());
+                    }
 
                     imported++;
                 } catch (Exception inner) {
