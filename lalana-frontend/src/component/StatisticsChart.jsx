@@ -1,110 +1,35 @@
 import { useMemo } from "react";
-import {
-  ChartBarIcon,
-  ClockIcon,
-  ArrowTrendingUpIcon,
-} from "@heroicons/react/24/outline";
+import { ChartBarIcon, ClockIcon, ArrowTrendingUpIcon } from "@heroicons/react/24/outline";
 
-export default function StatisticsChart({ problemes, isLoading }) {
-  // Calcul des statistiques
+// `StatisticsChart` now expects precomputed `stats` provided by the backend (or test response).
+// Shape: { counts: {...}, averages: {...}, minMax: {...}, histogram: [...], samples: [...] }
+export default function StatisticsChart({ stats, isLoading }) {
   const statistics = useMemo(() => {
-    if (problemes.length === 0) return null;
-
-    // Fonction pour calculer le délai en jours entre deux dates
-    const calculateDelayInDays = (startDate, endDate) => {
-      if (!startDate || !endDate) return null;
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const diffTime = Math.abs(end - start);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays;
-    };
-
-    // Délai Nouveau → En cours
-    const nouveauToEnCoursDelays = problemes
-      .filter((p) => p.dateNouveauStatus && p.dateEnCoursStatus)
-      .map((p) =>
-        calculateDelayInDays(p.dateNouveauStatus, p.dateEnCoursStatus)
-      )
-      .filter((d) => d !== null);
-
-    // Délai En cours → Terminé
-    const enCoursToTermineDelays = problemes
-      .filter((p) => p.dateEnCoursStatus && p.dateTermineStatus)
-      .map((p) =>
-        calculateDelayInDays(p.dateEnCoursStatus, p.dateTermineStatus)
-      )
-      .filter((d) => d !== null);
-
-    // Délai Total (Nouveau → Terminé)
-    const totalDelays = problemes
-      .filter((p) => p.dateNouveauStatus && p.dateTermineStatus)
-      .map((p) => calculateDelayInDays(p.dateNouveauStatus, p.dateTermineStatus))
-      .filter((d) => d !== null);
-
-    // Calcul des moyennes
-    const avgNouveauToEnCours =
-      nouveauToEnCoursDelays.length > 0
-        ? nouveauToEnCoursDelays.reduce((a, b) => a + b, 0) /
-          nouveauToEnCoursDelays.length
-        : 0;
-
-    const avgEnCoursToTermine =
-      enCoursToTermineDelays.length > 0
-        ? enCoursToTermineDelays.reduce((a, b) => a + b, 0) /
-          enCoursToTermineDelays.length
-        : 0;
-
-    const avgTotal =
-      totalDelays.length > 0
-        ? totalDelays.reduce((a, b) => a + b, 0) / totalDelays.length
-        : 0;
-
-    // Calcul du min et max pour le total
-    const minTotal = totalDelays.length > 0 ? Math.min(...totalDelays) : 0;
-    const maxTotal = totalDelays.length > 0 ? Math.max(...totalDelays) : 0;
-
-    // Comptage par statut
-    const nouveauCount = problemes.filter((p) => p.statusValeur === 10).length;
-    const enCoursCount = problemes.filter((p) => p.statusValeur === 20).length;
-    const termineCount = problemes.filter((p) => p.statusValeur === 30).length;
+    if (!stats) return null;
 
     return {
-      avgNouveauToEnCours: avgNouveauToEnCours.toFixed(1),
-      avgEnCoursToTermine: avgEnCoursToTermine.toFixed(1),
-      avgTotal: avgTotal.toFixed(1),
-      minTotal,
-      maxTotal,
-      nouveauCount,
-      enCoursCount,
-      termineCount,
-      totalCount: problemes.length,
-      completedPercentage: ((termineCount / problemes.length) * 100).toFixed(1),
+      avgNouveauToEnCours: stats.averages?.nouveauToEnCours ?? 0,
+      avgEnCoursToTermine: stats.averages?.enCoursToTermine ?? 0,
+      avgTotal: stats.averages?.totalNouveauToTermine ?? 0,
+      minTotal: stats.minMax?.min ?? 0,
+      maxTotal: stats.minMax?.max ?? 0,
+      nouveauCount: stats.counts?.nouveau ?? 0,
+      enCoursCount: stats.counts?.enCours ?? 0,
+      termineCount: stats.counts?.termine ?? 0,
+      totalCount: stats.counts?.total ?? 0,
+      completedPercentage:
+        stats.counts && stats.counts.total
+          ? ((stats.counts.termine / stats.counts.total) * 100).toFixed(1)
+          : "0.0",
     };
-  }, [problemes]);
+  }, [stats]);
 
-  // Calcul des données pour le graphique en barres
   const chartData = useMemo(() => {
     if (!statistics) return [];
     return [
-      {
-        label: "Nouveau → En cours",
-        value: parseFloat(statistics.avgNouveauToEnCours),
-        color: "bg-amber-500",
-        textColor: "text-amber-700",
-      },
-      {
-        label: "En cours → Terminé",
-        value: parseFloat(statistics.avgEnCoursToTermine),
-        color: "bg-blue-500",
-        textColor: "text-blue-700",
-      },
-      {
-        label: "Délai Total Moyen",
-        value: parseFloat(statistics.avgTotal),
-        color: "bg-emerald-500",
-        textColor: "text-emerald-700",
-      },
+      { label: "Nouveau → En cours", value: Number(statistics.avgNouveauToEnCours), color: "bg-amber-500", textColor: "text-amber-700" },
+      { label: "En cours → Terminé", value: Number(statistics.avgEnCoursToTermine), color: "bg-blue-500", textColor: "text-blue-700" },
+      { label: "Délai Total Moyen", value: Number(statistics.avgTotal), color: "bg-emerald-500", textColor: "text-emerald-700" },
     ];
   }, [statistics]);
 
@@ -123,7 +48,7 @@ export default function StatisticsChart({ problemes, isLoading }) {
     );
   }
 
-  if (!statistics || problemes.length === 0) {
+  if (!statistics || statistics.totalCount === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <div className="text-center py-12">

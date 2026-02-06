@@ -11,142 +11,51 @@ import ProgressTable from "../component/ProgressTable";
 import StatisticsChart from "../component/StatisticsChart";
 
 export default function ManagerDashboard() {
-  const [problemes, setProblemes] = useState([]);
+  const [samples, setSamples] = useState([]);
+  const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [useTestData, setUseTestData] = useState(true);
 
-  // Test data for development
-  const getTestData = () => {
-    return [
-      {
-        id: 1,
-        surface: 25.5,
-        budgetEstime: 15000,
-        entrepriseId: 1,
-        entrepriseName: "Construction Plus",
-        statusValeur: 30, // Terminé
-        localisation: "Avenue de l'Indépendance, Antananarivo",
-        dateNouveauStatus: "2026-01-15T08:30:00",
-        dateEnCoursStatus: "2026-01-17T10:00:00",
-        dateTermineStatus: "2026-01-25T16:30:00",
-      },
-      {
-        id: 2,
-        surface: 18.2,
-        budgetEstime: 12000,
-        entrepriseId: 2,
-        entrepriseName: "Travaux Experts",
-        statusValeur: 20, // En cours
-        localisation: "Route de Tamatave, Toamasina",
-        dateNouveauStatus: "2026-01-20T09:15:00",
-        dateEnCoursStatus: "2026-01-22T14:20:00",
-        dateTermineStatus: null,
-      },
-      {
-        id: 3,
-        surface: 32.8,
-        budgetEstime: 22000,
-        entrepriseId: null,
-        entrepriseName: null,
-        statusValeur: 10, // Nouveau
-        localisation: "Boulevard de France, Fianarantsoa",
-        dateNouveauStatus: "2026-01-28T11:00:00",
-        dateEnCoursStatus: null,
-        dateTermineStatus: null,
-      },
-      {
-        id: 4,
-        surface: 45.0,
-        budgetEstime: 30000,
-        entrepriseId: 1,
-        entrepriseName: "Construction Plus",
-        statusValeur: 30, // Terminé
-        localisation: "Rue de la République, Mahajanga",
-        dateNouveauStatus: "2026-01-10T07:45:00",
-        dateEnCoursStatus: "2026-01-12T09:30:00",
-        dateTermineStatus: "2026-01-20T15:00:00",
-      },
-      {
-        id: 5,
-        surface: 15.7,
-        budgetEstime: 8500,
-        entrepriseId: 3,
-        entrepriseName: "Réparations Rapides",
-        statusValeur: 20, // En cours
-        localisation: "Avenue de la Libération, Antsirabe",
-        dateNouveauStatus: "2026-01-25T10:20:00",
-        dateEnCoursStatus: "2026-01-27T13:45:00",
-        dateTermineStatus: null,
-      },
-      {
-        id: 6,
-        surface: 28.3,
-        budgetEstime: 18000,
-        entrepriseId: 2,
-        entrepriseName: "Travaux Experts",
-        statusValeur: 30, // Terminé
-        localisation: "Route Nationale 7, Tuléar",
-        dateNouveauStatus: "2026-01-12T08:00:00",
-        dateEnCoursStatus: "2026-01-15T11:30:00",
-        dateTermineStatus: "2026-01-28T17:00:00",
-      },
-      {
-        id: 7,
-        surface: 22.1,
-        budgetEstime: 14500,
-        entrepriseId: null,
-        entrepriseName: null,
-        statusValeur: 10, // Nouveau
-        localisation: "Avenue du 26 Juin, Antsiranana",
-        dateNouveauStatus: "2026-01-30T09:30:00",
-        dateEnCoursStatus: null,
-        dateTermineStatus: null,
-      },
-      {
-        id: 8,
-        surface: 38.5,
-        budgetEstime: 25000,
-        entrepriseId: 1,
-        entrepriseName: "Construction Plus",
-        statusValeur: 20, // En cours
-        localisation: "Boulevard Joffre, Antananarivo",
-        dateNouveauStatus: "2026-01-22T08:45:00",
-        dateEnCoursStatus: "2026-01-24T10:15:00",
-        dateTermineStatus: null,
-      },
-      {
-        id: 9,
-        surface: 12.8,
-        budgetEstime: 7000,
-        entrepriseId: 3,
-        entrepriseName: "Réparations Rapides",
-        statusValeur: 30, // Terminé
-        localisation: "Rue Poincaré, Morondava",
-        dateNouveauStatus: "2026-01-08T07:30:00",
-        dateEnCoursStatus: "2026-01-10T09:00:00",
-        dateTermineStatus: "2026-01-18T14:30:00",
-      },
-      {
-        id: 10,
-        surface: 50.2,
-        budgetEstime: 35000,
-        entrepriseId: 2,
-        entrepriseName: "Travaux Experts",
-        statusValeur: 20, // En cours
-        localisation: "Avenue de Madagascar, Nosy Be",
-        dateNouveauStatus: "2026-01-26T10:00:00",
-        dateEnCoursStatus: "2026-01-29T12:30:00",
-        dateTermineStatus: null,
-      },
-    ];
-  };
+  // Test response for development (precomputed stats + sample items)
+    // Test response for development (backend-style precomputed stats + sample items)
+    const getTestResponse = () => {
+      const samples = [
+        { id: 1, entrepriseName: "Construction Plus", statusValeur: 30, localisation: "Avenue de l'Indépendance, Antananarivo", dateNouveauStatus: "2026-01-15T08:30:00", dateEnCoursStatus: "2026-01-17T10:00:00", dateTermineStatus: "2026-01-25T16:30:00" },
+        { id: 2, entrepriseName: "Travaux Experts", statusValeur: 20, localisation: "Route de Tamatave, Toamasina", dateNouveauStatus: "2026-01-20T09:15:00", dateEnCoursStatus: "2026-01-22T14:20:00", dateTermineStatus: null },
+        { id: 3, entrepriseName: null, statusValeur: 10, localisation: "Boulevard de France, Fianarantsoa", dateNouveauStatus: "2026-01-28T11:00:00", dateEnCoursStatus: null, dateTermineStatus: null },
+        { id: 4, entrepriseName: "Construction Plus", statusValeur: 30, localisation: "Rue de la République, Mahajanga", dateNouveauStatus: "2026-01-10T07:45:00", dateEnCoursStatus: "2026-01-12T09:30:00", dateTermineStatus: "2026-01-20T15:00:00" },
+        { id: 5, entrepriseName: "Réparations Rapides", statusValeur: 20, localisation: "Avenue de la Libération, Antsirabe", dateNouveauStatus: "2026-01-25T10:20:00", dateEnCoursStatus: "2026-01-27T13:45:00", dateTermineStatus: null },
+        { id: 6, entrepriseName: "Travaux Experts", statusValeur: 30, localisation: "Route Nationale 7, Tuléar", dateNouveauStatus: "2026-01-12T08:00:00", dateEnCoursStatus: "2026-01-15T11:30:00", dateTermineStatus: "2026-01-28T17:00:00" },
+        { id: 7, entrepriseName: null, statusValeur: 10, localisation: "Avenue du 26 Juin, Antsiranana", dateNouveauStatus: "2026-01-30T09:30:00", dateEnCoursStatus: null, dateTermineStatus: null },
+        { id: 8, entrepriseName: "Construction Plus", statusValeur: 20, localisation: "Boulevard Joffre, Antananarivo", dateNouveauStatus: "2026-01-22T08:45:00", dateEnCoursStatus: "2026-01-24T10:15:00", dateTermineStatus: null },
+        { id: 9, entrepriseName: "Réparations Rapides", statusValeur: 30, localisation: "Rue Poincaré, Morondava", dateNouveauStatus: "2026-01-08T07:30:00", dateEnCoursStatus: "2026-01-10T09:00:00", dateTermineStatus: "2026-01-18T14:30:00" },
+        { id: 10, entrepriseName: "Travaux Experts", statusValeur: 20, localisation: "Avenue de Madagascar, Nosy Be", dateNouveauStatus: "2026-01-26T10:00:00", dateEnCoursStatus: "2026-01-29T12:30:00", dateTermineStatus: null },
+      ];
 
-  // Format API data to match our structure
+      // Precomputed stats (backend-style) — hardcoded for test purposes
+      const response = {
+        success: true,
+        data: {
+          counts: { nouveau: 2, enCours: 4, termine: 4, total: 10 },
+          averages: {
+            nouveauToEnCours: 2.0,
+            enCoursToTermine: 6.5,
+            totalNouveauToTermine: 8.5,
+          },
+          minMax: { min: 1, max: 18 },
+          histogram: [],
+          samples,
+        },
+      };
+
+      return response;
+    };
+
+  // Format API data to match our UI structure when backend provides full response
   const formatProblemeData = (apiData) => {
     return apiData.map((item) => {
-      // Extract status history dates
       const history = item.statusHistory || [];
       const nouveauHistory = history.find((h) => h.statusValeur === 10);
       const enCoursHistory = history.find((h) => h.statusValeur === 20);
@@ -159,8 +68,7 @@ export default function ManagerDashboard() {
         entrepriseId: item.entreprise?.id || null,
         entrepriseName: item.entreprise?.nom || null,
         statusValeur: item.problemeStatus?.valeur || 0,
-        localisation:
-          item.signalement?.point?.localisation || "Localisation inconnue",
+        localisation: item.signalement?.point?.localisation || "Localisation inconnue",
         dateNouveauStatus: nouveauHistory?.changedAt || item.createdAt || null,
         dateEnCoursStatus: enCoursHistory?.changedAt || null,
         dateTermineStatus: termineHistory?.changedAt || null,
@@ -175,9 +83,11 @@ export default function ManagerDashboard() {
       setError(null);
 
       if (useTestData) {
-        // Simulate API delay
+        // Simulate API delay and return the full response (counts, averages, samples)
         setTimeout(() => {
-          setProblemes(getTestData());
+          const resp = getTestResponse();
+          setStats(resp.data);
+          setSamples(resp.data.samples || []);
           setIsLoading(false);
         }, 500);
         return;
@@ -196,18 +106,23 @@ export default function ManagerDashboard() {
         const data = await response.json();
 
         if (data.success && data.data) {
-          const formattedData = formatProblemeData(data.data);
-          setProblemes(formattedData);
+          // backend should return the same response shape we use in tests
+          setStats(data.data);
+          setSamples(data.data.samples || []);
         } else {
           console.error("Format de données invalide:", data);
-          setProblemes(getTestData());
+          const resp = getTestResponse();
+          setStats(resp.data);
+          setSamples(resp.data.samples || []);
           setUseTestData(true);
         }
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error);
         setError(error.message);
         // Fallback to test data
-        setProblemes(getTestData());
+        const resp = getTestResponse();
+        setStats(resp.data);
+        setSamples(resp.data.samples || []);
         setUseTestData(true);
       } finally {
         setIsLoading(false);
@@ -217,8 +132,8 @@ export default function ManagerDashboard() {
     fetchProblemes();
   }, [useTestData]);
 
-  // Filter problemes by status
-  const filteredProblemes = problemes.filter((p) => {
+  // Filter samples by status
+  const filteredProblemes = samples.filter((p) => {
     if (filterStatus === "all") return true;
     return p.statusValeur === parseInt(filterStatus);
   });
@@ -288,7 +203,7 @@ export default function ManagerDashboard() {
                     : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
                 }`}
               >
-                Tous ({problemes.length})
+                  Tous ({samples.length})
               </button>
               <button
                 onClick={() => setFilterStatus("10")}
@@ -298,8 +213,7 @@ export default function ManagerDashboard() {
                     : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
                 }`}
               >
-                Nouveau ({problemes.filter((p) => p.statusValeur === 10).length}
-                )
+                    Nouveau ({samples.filter((p) => p.statusValeur === 10).length})
               </button>
               <button
                 onClick={() => setFilterStatus("20")}
@@ -309,8 +223,7 @@ export default function ManagerDashboard() {
                     : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
                 }`}
               >
-                En cours (
-                {problemes.filter((p) => p.statusValeur === 20).length})
+                    En cours ({samples.filter((p) => p.statusValeur === 20).length})
               </button>
               <button
                 onClick={() => setFilterStatus("30")}
@@ -320,8 +233,7 @@ export default function ManagerDashboard() {
                     : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
                 }`}
               >
-                Terminé (
-                {problemes.filter((p) => p.statusValeur === 30).length})
+                    Terminé ({samples.filter((p) => p.statusValeur === 30).length})
               </button>
             </div>
           </div>
@@ -349,7 +261,7 @@ export default function ManagerDashboard() {
                 Statistiques de Performance
               </h2>
             </div>
-            <StatisticsChart problemes={filteredProblemes} isLoading={isLoading} />
+            <StatisticsChart stats={stats} isLoading={isLoading} />
           </div>
 
           {/* Progress Table Section */}
