@@ -12,6 +12,7 @@ import { Capacitor } from '@capacitor/core';
 export interface UserPhoto {
     filepath: string;
     webviewPath?: string;
+    base64Data?: string;
 }
 
 const PHOTO_STORAGE_KEY = 'photos';
@@ -74,11 +75,13 @@ export function usePhoto() {
             return {
                 filepath: savedFile.uri,
                 webviewPath: Capacitor.convertFileSrc(savedFile.uri),
+                base64Data,
             };
         } else {
             return {
                 filepath: fileName,
                 webviewPath: photo.webPath,
+                base64Data,
             };
         }
     };
@@ -147,6 +150,52 @@ export function usePhoto() {
             reader.readAsDataURL(blob);
         });
 
+    /**
+     * Capture une photo sans la sauvegarder sur le filesystem.
+     * Utile pour les formulaires où on veut juste le base64 pour upload.
+     */
+    const capturePhoto = async (source: 'camera' | 'gallery' | 'prompt' = 'prompt'): Promise<UserPhoto | null> => {
+        try {
+            const cameraSource = source === 'camera' 
+                ? CameraSource.Camera 
+                : source === 'gallery' 
+                    ? CameraSource.Photos 
+                    : CameraSource.Prompt;
+
+            const photo = await Camera.getPhoto({
+                resultType: CameraResultType.Uri,
+                source: cameraSource,
+                quality: 80,
+                width: 1024,
+                promptLabelHeader: 'Photo',
+                promptLabelPhoto: 'Depuis la galerie',
+                promptLabelPicture: 'Prendre une photo',
+            });
+
+            let base64Data: string;
+            if (Capacitor.isNativePlatform()) {
+                const file = await Filesystem.readFile({ path: photo.path! });
+                base64Data = file.data as string;
+            } else {
+                const response = await fetch(photo.webPath!);
+                const blob = await response.blob();
+                base64Data = await convertBlobToBase64(blob);
+            }
+
+            return {
+                filepath: photo.path || photo.webPath || `photo_${Date.now()}.jpeg`,
+                webviewPath: Capacitor.isNativePlatform()
+                    ? Capacitor.convertFileSrc(photo.path!)
+                    : photo.webPath!,
+                base64Data,
+            };
+        } catch (e: any) {
+            if (e?.message?.includes('User cancelled')) return null;
+            console.error('Erreur capture photo:', e);
+            return null;
+        }
+    };
+
     onMounted(loadSaved);
 
     return {
@@ -155,5 +204,6 @@ export function usePhoto() {
         pickFromGallery,
         choosePhoto,
         deletePhoto,
+        capturePhoto,
     };
 }

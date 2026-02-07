@@ -55,7 +55,8 @@ export interface SignalementRequest {
   localisation: string; 
   description: string; 
   statusLibelle?: string;
-  createdAt: Date | string; 
+  createdAt: Date | string;
+  photoUrls?: string[];
 }
 
 /**

@@ -159,7 +159,7 @@ async function createSignalementAtCurrentLocation() {
   // Ajouter marqueur temporaire
   addTempMarker(lat, lng);
 
-  // Afficher le formulaire
+  // Afficher le formulaire modal
   const formData = await alertService.showSignalementForm();
 
   if (formData) {
@@ -180,7 +180,7 @@ async function handleMapClick(lat: number, lng: number) {
   // Ajouter marqueur temporaire
   addTempMarker(lat, lng);
 
-  // Afficher le formulaire
+  // Afficher le formulaire modal
   const formData = await alertService.showSignalementForm();
 
   if (formData) {
