@@ -11,6 +11,8 @@ import {
   CheckCircleIcon,
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
+import { fetchSignalementById, soumettreRapportTech } from "../api/signalementService";
+import { fetchEntreprises } from "../api/entrepriseService";
 
 export default function RapportTech() {
   const { id } = useParams();
@@ -26,49 +28,18 @@ export default function RapportTech() {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Formater les données du signalement
-  const formatSignalementData = (apiData) => {
-    return {
-      id: apiData.id,
-      userId: apiData.user?.id || null,
-      userEmail: apiData.user?.email || "Utilisateur inconnu",
-      userStatus: apiData.user?.currentStatus || 1,
-      x: apiData.point?.y || 0, // longitude
-      y: apiData.point?.x || 0, // latitude
-      localisation: apiData.point?.localisation || "Localisation inconnue",
-      description: apiData.description || "Pas de description",
-      createdAt: apiData.createdAt || new Date().toISOString(),
-      statusId: apiData.status?.id || 0,
-      statusNom: apiData.status?.nom || "Non défini",
-      statusValeur: apiData.status?.valeur || 0,
-      firestoreSynced: apiData.firestoreSynced || false,
-      rawData: apiData
-    };
-  };
+  // Formater les données du signalement (géré par signalementService)
 
   // Récupérer le signalement
   useEffect(() => {
-    const fetchSignalement = async () => {
+    const loadSignalement = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`http://localhost:8080/api/signalements/${id}`);
+        const formattedData = await fetchSignalementById(id);
+        setSignalement(formattedData);
         
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP! Statut: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success && data.data) {
-          const formattedData = formatSignalementData(data.data);
-          setSignalement(formattedData);
-          
-          // Vérifier si le signalement n'a pas le statut "En cours" (valeur 20)
-          if (formattedData.statusValeur !== 20) {
-            setError("Ce signalement n'a pas été envoyé à un technicien ou le rapport technique n'a pas été initié.");
-          }
-        } else {
-          throw new Error("Format de données invalide");
+        if (formattedData.statusValeur !== 20) {
+          setError("Ce signalement n'a pas été envoyé à un technicien ou le rapport technique n'a pas été initié.");
         }
       } catch (error) {
         console.error("Erreur lors du chargement du signalement:", error);
@@ -78,30 +49,18 @@ export default function RapportTech() {
       }
     };
 
-    // Récupérer les entreprises
-    const fetchEntreprises = async () => {
+    const loadEntreprises = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/entreprises');
-        
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP! Statut: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success && data.data) {
-          setEntreprises(data.data);
-        } else {
-          console.error("Format de données invalide pour les entreprises");
-        }
+        const data = await fetchEntreprises();
+        setEntreprises(data);
       } catch (error) {
         console.error("Erreur lors du chargement des entreprises:", error);
       }
     };
 
     if (id) {
-      fetchSignalement();
-      fetchEntreprises();
+      loadSignalement();
+      loadEntreprises();
     }
   }, [id]);
 
@@ -137,27 +96,13 @@ export default function RapportTech() {
       
       console.log("Données à envoyer:", rapportData);
       
-      // Ici, vous appellerez votre API pour créer le problème
-      // Exemple: POST /api/problemes
-      const response = await fetch('http://localhost:8080/api/signalements/rapportTech', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(rapportData),
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        setSuccessMessage("Rapport technique créé avec succès !");
+      const result = await soumettreRapportTech(rapportData);
+      setSuccessMessage("Rapport technique créé avec succès !");
         
-        // Rediriger après succès
-        setTimeout(() => {
-          navigate("/backoffice/problemes");
-        }, 2000);
-      } else {
-        throw new Error(`Erreur lors de la création du rapport: ${response.status}`);
-      }
+      // Rediriger après succès
+      setTimeout(() => {
+        navigate("/backoffice/problemes");
+      }, 2000);
     } catch (error) {
       console.error("Erreur création rapport:", error);
       alert("Erreur lors de la création du rapport technique: " + error.message);

@@ -41,6 +41,20 @@ public class SignalementController {
         }
     }
 
+    @GetMapping("/nonresolus")
+    public ApiResponse getNonResolus() {
+        try {
+            List<Signalement> list = signalementService.getSignalementsNonResolus();
+            return new ApiResponse(true, "Signalements non résolus récupérés", list);
+        } catch (ServiceException se) {
+            logger.error("ServiceException getNonResolus", se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error getNonResolus", e);
+            return new ApiResponse(false, "Erreur serveur lors de la récupération des signalements non résolus", null);
+        }
+    }
+
     @GetMapping("/{id:\\d+}")
     public ApiResponse getById(@PathVariable Integer id) {
         try {

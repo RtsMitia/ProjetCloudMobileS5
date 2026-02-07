@@ -9,6 +9,9 @@ import ProblemListPanel from "./ProblemListPanel";
 import SignalementListPanel from "./SignalementListPanel";
 import ProblemMarker from "./ProblemMarker";
 import SignalementMarker from "./SignalementMarker";
+import DetailPanel from "./DetailPanel";
+import { fetchSignalementsMap } from "../api/signalementService";
+import { fetchProblemesMap as fetchProblemesAPI } from "../api/problemeService";
 
 // Fix pour les icônes de marqueurs par défaut
 import markerIcon from "leaflet/dist/images/marker-icon.png";
@@ -30,183 +33,54 @@ function MapOffLine() {
   const [showProblemes, setShowProblemes] = useState(true);
   const [showList, setShowList] = useState(false);
   const [listType, setListType] = useState("problemes"); // "problemes" ou "signalements"
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatusProbleme, setFilterStatusProbleme] = useState("all");
+  const [filterStatusSignalement, setFilterStatusSignalement] = useState("all");
   const [selectedProblemId, setSelectedProblemId] = useState(null);
   const [selectedSignalementId, setSelectedSignalementId] = useState(null);
+  const [detailPanel, setDetailPanel] = useState({ type: null, data: null });
   const [searchQuery, setSearchQuery] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const mapRef = useRef();
 
-  // Formater les données de signalements reçues de l'API
-  const formatSignalementData = (apiData) => {
-    return apiData.map(item => ({
-      id: item.id,
-      userId: item.user?.id || null,
-      userEmail: item.user?.email || "Utilisateur inconnu",
-      x: item.point?.y || 0, // Note: x correspond à longitude dans le JSON
-      y: item.point?.x || 0, // Note: y correspond à latitude dans le JSON
-      localisation: item.point?.localisation || "Localisation inconnue",
-      description: item.description || "Pas de description",
-      createdAt: item.createdAt || new Date().toISOString(),
-      statusLiebelle: item.status?.nom || "Non défini",
-      statusId: item.status?.id || 0,
-      valeur: item.status?.valeur || 0,
-      // Données originales si besoin
-      rawData: item
-    }));
-  };
-
-  // Formater les données de problèmes reçues de l'API
-  const formatProblemeData = (apiData) => {
-    return apiData.map(item => ({
-      id: item.id,
-      surface: item.surface || 0,
-      budgetEstime: item.budgetEstime || 0,
-      entrepriseId: item.entreprise?.id || null,
-      entrepriseName: item.entreprise?.nom || null,
-      entrepriseContact: item.entreprise?.telephone || null,
-      entrepriseAdresse: item.entreprise?.adresse || null,
-      statusId: item.problemeStatus?.id || 0,
-      statusNom: item.problemeStatus?.nom || "Non défini",
-      statusValeur: item.problemeStatus?.valeur || 0,
-      signalementId: item.signalement?.id || null,
-      // Données du signalement associé
-      userId: item.signalement?.user?.id || null,
-      userEmail: item.signalement?.user?.email || "Utilisateur inconnu",
-      x: item.signalement?.point?.y || 0, // longitude
-      y: item.signalement?.point?.x || 0, // latitude
-      localisation: item.signalement?.point?.localisation || "Localisation inconnue",
-      description: item.signalement?.description || "Pas de description",
-      signalementCreatedAt: item.signalement?.createdAt || null,
-      signalementStatus: item.signalement?.status?.nom || "Non défini",
-      signalementValeur: item.signalement?.status?.valeur || 0,
-      // Alias pour compatibilité avec le code existant
-      statusLiebelle: item.problemeStatus?.nom || "Non défini",
-      createdAt: item.signalement?.createdAt || new Date().toISOString(),
-      // Données originales si besoin
-      rawData: item
-    }));
-  };
-
   // Récupération des données depuis les APIs
   useEffect(() => {
-    const fetchSignalements = async () => {
+    const loadSignalements = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/signalement');
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success && data.data) {
-          const formattedData = formatSignalementData(data.data);
-          setSignalement(formattedData);
-          console.log(`${formattedData.length} signalements chargés depuis l'API`);
-        } else {
-          console.error("Format de données invalide pour signalements:", data);
-          setSignalement(getMockSignalements());
-        }
+        const formattedData = await fetchSignalementsMap();
+        setSignalement(formattedData);
+        console.log(`${formattedData.length} signalements chargés depuis l'API`);
       } catch (error) {
         console.error("Erreur lors du chargement des signalements:", error);
-        setSignalement(getMockSignalements());
+        setSignalement([]);
       }
     };
 
-    const fetchProblemes = async () => {
+    const loadProblemes = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/problemes');
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success && data.data) {
-          const formattedData = formatProblemeData(data.data);
-          setProbleme(formattedData);
-          console.log(`${formattedData.length} problèmes chargés depuis l'API`);
-        } else {
-          console.error("Format de données invalide pour problèmes:", data);
-          setProbleme(getMockProblemes());
-        }
+        const formattedData = await fetchProblemesAPI();
+        setProbleme(formattedData);
+        console.log(`${formattedData.length} problèmes chargés depuis l'API`);
       } catch (error) {
         console.error("Erreur lors du chargement des problèmes:", error);
-        setProbleme(getMockProblemes());
+        setProbleme([]);
       }
     };
 
-    // Données mockées pour les signalements (fallback)
-    const getMockSignalements = () => {
-      return [
-        {
-          id: 1,
-          userId: 1,
-          userEmail: "alice@example.com",
-          x: 47.5218,
-          y: -18.9089,
-          localisation: "Antananarivo - Avenue de l'Independance",
-          description: "Nid-de-poule important sur la chaussee principale, risque pour les vehicules",
-          createdAt: "2024-01-15T09:30:00",
-          statusLiebelle: "Nouveau",
-          statusId: 1,
-          valeur: 10,
-        },
-        {
-          id: 2,
-          userId: 2,
-          userEmail: "bob@example.com",
-          x: 49.3958,
-          y: -18.1443,
-          localisation: "Toamasina - Port",
-          description: "eclairage public defectueux depuis 3 jours, quartier sombre le soir",
-          createdAt: "2024-01-16T14:20:00",
-          statusLiebelle: "En cours",
-          statusId: 2,
-          valeur: 20,
-        },
-        {
-          id: 3,
-          userId: 1,
-          userEmail: "alice@example.com",
-          x: 47.0331,
-          y: -19.8689,
-          localisation: "Antsirabe - Centre ville",
-          description: "Caniveau bouche causant des inondations lors des pluies",
-          createdAt: "2024-01-17T11:45:00",
-          statusLiebelle: "Nouveau",
-          statusId: 1,
-          valeur: 10,
-        },
-      ];
-    };
-
-    // Données mockées pour les problèmes (fallback)
-    const getMockProblemes = () => {
-      return [
-      ];
-    };
-
-    fetchSignalements();
-    fetchProblemes();
+    loadSignalements();
+    loadProblemes();
   }, []);
 
   // Filtrage des données
   const getProblemesFiltres = () => {
     let filtered = probleme;
 
-    if (filterStatus !== "all") {
-      switch (filterStatus) {
+    if (filterStatusProbleme !== "all") {
+      switch (filterStatusProbleme) {
         case "pending":
           filtered = filtered.filter(p => p.statusValeur === 10);
           break;
         case "inprogress":
           filtered = filtered.filter(p => p.statusValeur === 20);
-          break;
-        case "resolved":
-          filtered = filtered.filter(p => p.statusValeur === 30);
           break;
       }
     }
@@ -228,16 +102,13 @@ function MapOffLine() {
   const getSignalementsFiltres = () => {
     let filtered = signalement;
 
-    if (filterStatus !== "all") {
-      switch (filterStatus) {
+    if (filterStatusSignalement !== "all") {
+      switch (filterStatusSignalement) {
         case "pending":
           filtered = filtered.filter(s => s.valeur === 10);
           break;
         case "inprogress":
           filtered = filtered.filter(s => s.valeur === 20);
-          break;
-        case "resolved":
-          filtered = filtered.filter(s => s.valeur === 30);
           break;
       }
     }
@@ -263,6 +134,10 @@ function MapOffLine() {
   const handleProblemClick = (problemId) => {
     setSelectedProblemId(problemId);
     setSelectedSignalementId(null);
+    const prob = probleme.find(p => p.id === problemId);
+    if (prob) {
+      setDetailPanel({ type: "probleme", data: prob });
+    }
     if (window.innerWidth < 768) {
       setShowList(false);
     }
@@ -271,14 +146,25 @@ function MapOffLine() {
   const handleSignalementClick = (signalementId) => {
     setSelectedSignalementId(signalementId);
     setSelectedProblemId(null);
+    const sig = signalement.find(s => s.id === signalementId);
+    if (sig) {
+      setDetailPanel({ type: "signalement", data: sig });
+    }
     if (window.innerWidth < 768) {
       setShowList(false);
     }
   };
 
+  const handleCloseDetailPanel = () => {
+    setDetailPanel({ type: null, data: null });
+    setSelectedProblemId(null);
+    setSelectedSignalementId(null);
+  };
+
   const handleClearSelection = () => {
     setSelectedProblemId(null);
     setSelectedSignalementId(null);
+    setDetailPanel({ type: null, data: null });
   };
 
   const handleFullscreenToggle = () => {
@@ -312,8 +198,10 @@ function MapOffLine() {
         onToggleSignalements={() => setShowSignalements(!showSignalements)}
         showProblemes={showProblemes}
         onToggleProblemes={() => setShowProblemes(!showProblemes)}
-        filterStatus={filterStatus}
-        onFilterChange={setFilterStatus}
+        filterStatusProbleme={filterStatusProbleme}
+        onFilterProblemeChange={setFilterStatusProbleme}
+        filterStatusSignalement={filterStatusSignalement}
+        onFilterSignalementChange={setFilterStatusSignalement}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         signalementCount={signalement.length}
@@ -323,7 +211,7 @@ function MapOffLine() {
       {/* Contenu principal */}
       <div className="flex h-[calc(100vh-140px)]">
         {/* Carte */}
-        <div className={`${showList ? 'w-full md:w-2/3' : 'w-full'} transition-all duration-300`}>
+        <div className={`${showList ? 'w-full md:w-2/3' : 'w-full'} transition-all duration-300 relative`}>
           <div className="h-full bg-white">
             <MapContainer
               center={[-18.8792, 47.5079]}
@@ -353,6 +241,7 @@ function MapOffLine() {
                 <SignalementMarker
                   key={`signalement-${sig.id}`}
                   signalement={sig}
+                  onClick={handleSignalementClick}
                 />
               ))}
 
@@ -367,6 +256,15 @@ function MapOffLine() {
               ))}
             </MapContainer>
           </div>
+
+          {/* Panneau de détail à gauche (affiché au clic sur un marqueur) */}
+          {detailPanel.data && (
+            <DetailPanel
+              type={detailPanel.type}
+              data={detailPanel.data}
+              onClose={handleCloseDetailPanel}
+            />
+          )}
         </div>
 
         {/* Panneau de liste avec switch */}
@@ -402,8 +300,8 @@ function MapOffLine() {
                   selectedProblemId={selectedProblemId}
                   onProblemClick={handleProblemClick}
                   onClose={() => setShowList(false)}
-                  filterStatus={filterStatus}
-                  onFilterChange={setFilterStatus}
+                  filterStatus={filterStatusProbleme}
+                  onFilterChange={setFilterStatusProbleme}
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                 />
@@ -413,8 +311,8 @@ function MapOffLine() {
                   selectedSignalementId={selectedSignalementId}
                   onSignalementClick={handleSignalementClick}
                   onClose={() => setShowList(false)}
-                  filterStatus={filterStatus}
-                  onFilterChange={setFilterStatus}
+                  filterStatus={filterStatusSignalement}
+                  onFilterChange={setFilterStatusSignalement}
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                 />
@@ -425,16 +323,33 @@ function MapOffLine() {
       </div>
 
       {/* Styles CSS */}
-      <style jsx>{`
+      <style>{`
         .selected-marker {
           filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
           z-index: 1000 !important;
         }
-        .leaflet-popup-content {
-          margin: 12px !important;
+        .leaflet-tooltip {
+          padding: 0 !important;
+          border: none !important;
+          background: white !important;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+          border-radius: 8px !important;
         }
-        .leaflet-popup {
-          z-index: 1001 !important;
+        .leaflet-tooltip-top:before {
+          border-top-color: white !important;
+        }
+        @keyframes slideIn {
+          from {
+            transform: translateX(-100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        .animate-slide-in {
+          animation: slideIn 0.3s ease-out;
         }
       `}</style>
     </div>
