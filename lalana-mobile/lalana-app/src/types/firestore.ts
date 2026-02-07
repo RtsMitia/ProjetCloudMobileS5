@@ -43,19 +43,20 @@ export interface Signalement {
   statusLibelle: string; // Ex: "En attente", "En cours", "Résolu"
   createdAt: Timestamp | string;
   updatedAt?: Timestamp;
-  photoUrls?: string[]; 
-  priority?: number; 
+  photoUrls?: string[];
+  priority?: number;
 }
 
 export interface SignalementRequest {
   id?: null;
-  userId: string; 
-  x: number; 
-  y: number; 
-  localisation: string; 
-  description: string; 
+  userId: string;
+  x: number;
+  y: number;
+  localisation: string;
+  description: string;
   statusLibelle?: string;
-  createdAt: Date | string; 
+  createdAt: Date | string;
+  photoUrls?: string[];
 }
 
 /**
@@ -144,4 +145,16 @@ export interface StatusProblemeRef {
   description: string;
   valeur: number;
   ordre: number;
+}
+
+/**
+ * Interface pour les tokens FCM des utilisateurs (collection userTokens)
+ */
+export interface UserToken {
+  userId: string;
+  email: string;
+  fcmToken: string;
+  platform: 'ios' | 'android' | 'web';
+  updatedAt: Timestamp;
+  createdAt: Timestamp;
 }
