@@ -4,14 +4,20 @@ import com.projet.lalana.model.Signalement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
+
 public interface SignalementRepository extends JpaRepository<Signalement, Integer> {
-	java.util.List<Signalement> findByFirestoreSyncedFalse();
+	List<Signalement> findByFirestoreSyncedFalse();
 
 	// Return all signalements whose status.valeur <= 10 and not yet synced
 	@Query("SELECT s FROM Signalement s WHERE s.status.valeur <= 10 AND s.firestoreSynced = false")
-	java.util.List<Signalement> findByStatusValeurLE10();
+	List<Signalement> findByStatusValeurLE10();
 
 	// Return signalements whose status.valeur = 30
 	@Query("SELECT s FROM Signalement s WHERE s.status.valeur = 30")
-	java.util.List<Signalement> findByStatusValeur30();
+	List<Signalement> findByStatusValeur30();
+
+	@Query("SELECT s FROM Signalement s JOIN FETCH s.images WHERE s.status.valeur != 30")
+	List<Signalement> findAllWithStatusOther();
+
 }

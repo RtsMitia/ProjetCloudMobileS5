@@ -10,6 +10,7 @@ import {
     BuildingOffice2Icon,
     CheckCircleIcon,
 } from "@heroicons/react/24/outline";
+import { signup } from "../api/authService";
 
 function Register() {
     const navigate = useNavigate();
@@ -82,23 +83,7 @@ function Register() {
 
         try {
             // Appel API d'inscription
-            const response = await fetch('http://localhost:8080/auth/signup', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: formData.email,
-                    password: formData.password,
-                }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                // Gérer les erreurs d'inscription
-                throw new Error(data.error || "Erreur lors de l'inscription");
-            }
+            const data = await signup(formData.email, formData.password);
 
             // Succès de l'inscription
             setSuccess("Compte créé avec succès ! Redirection...");

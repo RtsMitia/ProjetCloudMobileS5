@@ -250,6 +250,12 @@ public class ProblemeService {
         } catch (Exception e) {
             logger.error("Erreur lors du calcul des statistiques manager", e);
             throw new ServiceException("Erreur lors du calcul des statistiques", e);
+    public List<Probleme> findNonResolus() {
+        try {
+            return problemeRepository.findAllWithStatusOther();
+        } catch (Exception e) {
+            logger.error("Erreur lors de findNonResolus", e);
+            throw new ServiceException("Erreur lors de la récupération des problèmes non résolus", e);
         }
     }
 

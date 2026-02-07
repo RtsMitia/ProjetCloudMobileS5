@@ -42,6 +42,20 @@ public class ProblemeController {
         }
     }
 
+    @GetMapping("/nonresolus")
+    public ApiResponse getNonResolus() {
+        try {
+            List<Probleme> list = problemeService.findNonResolus();
+            return new ApiResponse(true, "Problèmes non résolus récupérés", list);
+        } catch (ServiceException se) {
+            logger.error("ServiceException getNonResolus problemes", se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error getNonResolus problemes", e);
+            return new ApiResponse(false, "Erreur serveur lors de la récupération des problèmes non résolus", null);
+        }
+    }
+
     @GetMapping("/{id}")
     public ApiResponse getById(@PathVariable Integer id) {
         try {
