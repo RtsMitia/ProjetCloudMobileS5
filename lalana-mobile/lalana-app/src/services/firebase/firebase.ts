@@ -9,23 +9,13 @@ import { getFirestore } from "firebase/firestore";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-
-  apiKey: "AIzaSyAux1vRChlG_x_aOTY5sEvZ0zk4QXl7YYA",
-
-  authDomain: "gestionroutiere-aaa53.firebaseapp.com",
-
-  databaseURL: "https://gestionroutiere-aaa53-default-rtdb.firebaseio.com",
-
-  projectId: "gestionroutiere-aaa53",
-
-  storageBucket: "gestionroutiere-aaa53.firebasestorage.app",
-
-  messagingSenderId: "997547144040",
-
-  appId: "1:997547144040:web:3a8b8de80842c006435cdd",
-
-  measurementId: "G-EHW0B3B9VF"
-
+  apiKey: "AIzaSyAl61XlAUcuspotTSFl35BLECsU959AEa8",
+  authDomain: "cloud-lalana.firebaseapp.com",
+  projectId: "cloud-lalana",
+  storageBucket: "cloud-lalana.firebasestorage.app",
+  messagingSenderId: "45207388578",
+  appId: "1:45207388578:web:b7df253b27fd209ed232fb",
+  measurementId: "G-0QQR8MX66D"
 };
 
 // Initialize Firebase
