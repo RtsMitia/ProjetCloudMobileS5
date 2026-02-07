@@ -5,15 +5,15 @@ import { useAuth } from './useAuth';
 
 export function useSignalements() {
   const { currentUser, isAuthenticated } = useAuth();
-  
+
   const signalements = ref<Signalement[]>([]);
   const filteredSignalements = ref<Signalement[]>([]);
   const isLoading = ref(false);
   const error = ref<string>('');
-  
+
   const selectedStatus = ref<string>('all');
   const showOnlyMySignalements = ref<boolean>(false);
-  
+
   let unsubscribe: (() => void) | null = null;
 
   function subscribeToSignalements(): void {
@@ -118,11 +118,11 @@ export function useSignalements() {
     isLoading,
     error,
     stats,
-    
+
     // Filtres
     selectedStatus,
     showOnlyMySignalements,
-    
+
     // Actions
     subscribeToSignalements,
     unsubscribeFromSignalements,

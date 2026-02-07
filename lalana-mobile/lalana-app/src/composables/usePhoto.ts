@@ -156,10 +156,10 @@ export function usePhoto() {
      */
     const capturePhoto = async (source: 'camera' | 'gallery' | 'prompt' = 'prompt'): Promise<UserPhoto | null> => {
         try {
-            const cameraSource = source === 'camera' 
-                ? CameraSource.Camera 
-                : source === 'gallery' 
-                    ? CameraSource.Photos 
+            const cameraSource = source === 'camera'
+                ? CameraSource.Camera
+                : source === 'gallery'
+                    ? CameraSource.Photos
                     : CameraSource.Prompt;
 
             const photo = await Camera.getPhoto({
