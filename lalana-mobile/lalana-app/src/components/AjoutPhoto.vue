@@ -18,16 +18,30 @@
       </div>
     </div>
 
-    <!-- Boutons ajout photo -->
-    <div class="photo-buttons">
-      <ion-button expand="block" fill="outline" @click="handleTakePhoto">
-        <ion-icon :icon="camera" slot="start" />
-        Prendre une photo
-      </ion-button>
-      <ion-button expand="block" fill="outline" @click="handlePickFromGallery">
-        <ion-icon :icon="images" slot="start" />
-        Depuis la galerie
-      </ion-button>
+    <!-- Icônes ajout photo (action uniquement) -->
+    <div class="photo-buttons action-card">
+      <div class="icon-buttons">
+        <ion-button
+          fill="clear"
+          class="icon-only action-btn"
+          @click="handleTakePhoto"
+          title="Prendre une photo"
+          aria-label="Prendre une photo"
+        >
+          <ion-icon :icon="camera" />
+        </ion-button>
+
+        <ion-button
+          fill="clear"
+          class="icon-only action-btn"
+          @click="handlePickFromGallery"
+          title="Depuis la galerie"
+          aria-label="Depuis la galerie"
+        >
+          <ion-icon :icon="images" />
+        </ion-button>
+      </div>
+      <p class="action-text">Ajouter des photos</p>
     </div>
   </div>
 </template>
@@ -144,9 +158,61 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 8px;
+  align-items: center;
+}
+
+.action-card {
+  background-color: var(--ion-color-light);
+  border: 2px dashed var(--ion-color-medium-shade);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 8px;
+  transition: background-color 0.2s;
+}
+
+.action-card:active {
+  background-color: var(--ion-color-light-shade);
+}
+
+.action-text {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--ion-color-medium);
+  font-weight: 500;
 }
 
 .photo-buttons ion-button {
   --border-radius: 8px;
+}
+
+.icon-buttons {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-only {
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --min-width: 64px;
+  width: 64px;
+  height: 64px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  --color: var(--ion-color-primary);
+  transition: transform 0.1s ease;
+}
+
+.icon-only:active {
+  transform: scale(0.95);
+}
+
+.icon-only ion-icon {
+  font-size: 32px;
 }
 </style>
