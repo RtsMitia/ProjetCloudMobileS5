@@ -4,6 +4,7 @@ import com.projet.lalana.response.ApiResponse;
 import com.projet.lalana.service.ProblemeService;
 import com.projet.lalana.service.ServiceException;
 import com.projet.lalana.dto.ProblemeDto;
+import com.projet.lalana.dto.ManagerStatsDto;
 import com.projet.lalana.model.Probleme;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -107,6 +108,21 @@ public class ProblemeController {
         } catch (Exception e) {
             logger.error("Erreur getProblemesValeur10", e);
             return new ApiResponse(false, "Erreur serveur lors de la récupération des problèmes", null);
+        }
+    }
+
+
+    @GetMapping("/manager-stats")
+    public ApiResponse getManagerStats() {
+        try {
+            ManagerStatsDto stats = problemeService.getManagerStats();
+            return new ApiResponse(true, "Statistiques calculées avec succès", stats);
+        } catch (ServiceException se) {
+            logger.error("ServiceException getManagerStats", se);
+            return new ApiResponse(false, se.getMessage(), null);
+        } catch (Exception e) {
+            logger.error("Unexpected error getManagerStats", e);
+            return new ApiResponse(false, "Erreur serveur lors du calcul des statistiques", null);
         }
     }
 
