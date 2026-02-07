@@ -14,15 +14,13 @@ import java.util.Map;
 @AllArgsConstructor
 public class ManagerStatsDto {
 
-    private Map<String, Integer> counts;        // { nouveau: 2, enCours: 4, termine: 4, total: 10 }
-    private Map<String, Double> averages;       // { nouveauToEnCours: 2.0, enCoursToTermine: 6.5, totalNouveauToTermine: 8.5 }
-    private Map<String, Integer> minMax;        // { min: 1, max: 18 }
-    private List<Map<String, Object>> histogram; // Optional: histogram data (can be empty for now)
-    private List<ProblemeSampleDto> samples;    // Sample problems with status history dates
+    private Map<String, Integer> counts;
+    private Map<String, Double> averages;
+    private Map<String, Integer> minMax;
+    private List<Map<String, Object>> histogram;
+    private List<ProblemeSampleDto> samples;
 
-    /**
-     * DTO simplifié pour un échantillon de problème avec dates de status
-     */
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

@@ -84,9 +84,7 @@ public class ProblemeService {
         try {
             Probleme probleme = problemeRepository.findById(id)
                     .orElseThrow(() -> new ServiceException("Problème non trouvé id=" + id));
-
-            // Assumption: status with id=2 corresponds to the "résolu/terminé" status in
-            // the database.
+            
             ProblemeStatus resolvedStatus = problemeStatusRepository.findByValeur(RESOLVED_STATUS_VALUE)
                     .orElseThrow(() -> new ServiceException(
                             "[DEBUG] Status résolu introuvable (VALEUR=" + RESOLVED_STATUS_VALUE + ")"));
@@ -118,15 +116,11 @@ public class ProblemeService {
         }
     }
 
-    /**
-     * Calcule les statistiques pour le tableau de bord manager
-     * Inclut: counts, averages, minMax, histogram (vide pour l'instant), et samples
-     */
+
     public ManagerStatsDto getManagerStats() {
         try {
             List<Probleme> allProblemes = problemeRepository.findAll();
-            
-            // Compteurs par statut
+
             long nouveauCount = allProblemes.stream()
                     .filter(p -> p.getProblemeStatus() != null && p.getProblemeStatus().getValeur() == 10)
                     .count();
@@ -143,7 +137,7 @@ public class ProblemeService {
             counts.put("termine", (int) termineCount);
             counts.put("total", allProblemes.size());
             
-            // Calcul des moyennes de durée (en jours)
+            
             List<Double> nouveauToEnCoursDurations = new ArrayList<>();
             List<Double> enCoursToTermineDurations = new ArrayList<>();
             List<Double> totalDurations = new ArrayList<>();
@@ -169,19 +163,17 @@ public class ProblemeService {
                         .findFirst()
                         .orElse(null);
                 
-                // Nouveau -> En cours
+                
                 if (nouveauDate != null && enCoursDate != null) {
                     double days = ChronoUnit.DAYS.between(nouveauDate, enCoursDate);
                     nouveauToEnCoursDurations.add(days);
                 }
                 
-                // En cours -> Terminé
                 if (enCoursDate != null && termineDate != null) {
                     double days = ChronoUnit.DAYS.between(enCoursDate, termineDate);
                     enCoursToTermineDurations.add(days);
                 }
                 
-                // Total (Nouveau -> Terminé)
                 if (nouveauDate != null && termineDate != null) {
                     double days = ChronoUnit.DAYS.between(nouveauDate, termineDate);
                     totalDurations.add(days);
@@ -199,7 +191,7 @@ public class ProblemeService {
                     totalDurations.isEmpty() ? 0.0 
                     : totalDurations.stream().mapToDouble(d -> d).average().orElse(0.0));
             
-            // Min / Max (durée totale)
+            
             Map<String, Integer> minMax = new HashMap<>();
             if (!totalDurations.isEmpty()) {
                 minMax.put("min", totalDurations.stream().min(Double::compareTo).orElse(0.0).intValue());
@@ -209,10 +201,10 @@ public class ProblemeService {
                 minMax.put("max", 0);
             }
             
-            // Histogram (vide pour l'instant, peut être implémenté plus tard)
+            
             List<Map<String, Object>> histogram = new ArrayList<>();
             
-            // Samples: tous les problèmes avec leurs dates de statut
+            
             List<ProblemeSampleDto> samples = allProblemes.stream().map(p -> {
                 List<ProblemeHistory> history = problemeHistoryRepository.findByProblemeIdOrderByChangedAtAsc(p.getId());
                 
