@@ -14,6 +14,11 @@ import {
   CheckCircleIcon,
   PlayIcon,
 } from "@heroicons/react/24/outline";
+import {
+  fetchProblemes as fetchProblemesAPI,
+  processerProbleme,
+  resoudreProbleme,
+} from "../api/problemeService";
 
 export default function ProblemesList() {
   const [problemes, setProblemes] = useState([]);
@@ -22,102 +27,45 @@ export default function ProblemesList() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Formater les données de problèmes reçues de l'API
-  const formatProblemeData = (apiData) => {
-    return apiData.map(item => ({
-      id: item.id,
-      surface: item.surface || 0,
-      budgetEstime: item.budgetEstime || 0,
-      entrepriseId: item.entreprise?.id || null,
-      entrepriseName: item.entreprise?.nom || null,
-      entrepriseContact: item.entreprise?.telephone || null,
-      entrepriseAdresse: item.entreprise?.adresse || null,
-      statusId: item.problemeStatus?.id || 0,
-      statusNom: item.problemeStatus?.nom || "Non défini",
-      statusValeur: item.problemeStatus?.valeur || 0,
-      signalementId: item.signalement?.id || null,
-      // Données du signalement associé
-      userId: item.signalement?.user?.id || null,
-      userEmail: item.signalement?.user?.email || "Utilisateur inconnu",
-      x: item.signalement?.point?.y || 0, // longitude
-      y: item.signalement?.point?.x || 0, // latitude
-      localisation: item.signalement?.point?.localisation || "Localisation inconnue",
-      description: item.signalement?.description || "Pas de description",
-      signalementCreatedAt: item.signalement?.createdAt || null,
-      signalementStatus: item.signalement?.status?.nom || "Non défini",
-      signalementValeur: item.signalement?.status?.valeur || 0,
-      // Alias pour compatibilité
-      createdAt: item.signalement?.createdAt || new Date().toISOString(),
-      // Données originales
-      rawData: item
-    }));
-  };
+  // Formater les données de problèmes (géré par problemeService)
 
   // Récupérer les problèmes depuis l'API
   useEffect(() => {
-    const fetchProblemes = async () => {
+    const loadProblemes = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('http://localhost:8080/api/problemes');
-
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP! Statut: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success && data.data) {
-          const formattedData = formatProblemeData(data.data);
-          setProblemes(formattedData);
-          console.log(`${formattedData.length} problèmes chargés depuis l'API`);
-        } else {
-          console.error("Format de données invalide:", data);
-          setProblemes(getMockProblemes());
-        }
+        const formattedData = await fetchProblemesAPI();
+        setProblemes(formattedData);
+        console.log(`${formattedData.length} problèmes chargés depuis l'API`);
       } catch (error) {
         console.error("Erreur lors du chargement des problèmes:", error);
         setError(error.message);
-        setProblemes(getMockProblemes());
+        setProblemes([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Données mockées pour fallback
-    const getMockProblemes = () => {
-      return [];
-    };
-
-    fetchProblemes();
+    loadProblemes();
   }, []);
 
   // Fonction pour mettre un problème en cours de traitement
   const handleProcesserProbleme = async (problemeId) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/problemes/${problemeId}/processer`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        setProblemes(prevProblemes =>
-          prevProblemes.map(prob =>
-            prob.id === problemeId
-              ? {
-                ...prob,
-                statusValeur: 20,
-                statusNom: "En cours de traitement",
-                statusId: 2
-              }
-              : prob
-          )
-        );
-        alert(`Problème #${problemeId} mis en cours de traitement avec succès`);
-      } else {
-        throw new Error(`Erreur lors du traitement: ${response.status}`);
-      }
+      await processerProbleme(problemeId);
+      setProblemes(prevProblemes =>
+        prevProblemes.map(prob =>
+          prob.id === problemeId
+            ? {
+              ...prob,
+              statusValeur: 20,
+              statusNom: "En cours de traitement",
+              statusId: 2
+            }
+            : prob
+        )
+      );
+      alert(`Problème #${problemeId} mis en cours de traitement avec succès`);
     } catch (error) {
       console.error("Erreur traitement problème:", error);
 
@@ -142,36 +90,23 @@ export default function ProblemesList() {
   // Fonction pour marquer un problème comme résolu
   const handleResoudreProbleme = async (problemeId) => {
     try {
-      // Appel API pour mettre à jour le statut du problème
-      const response = await fetch(`http://localhost:8080/api/problemes/${problemeId}/resoudre`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        // Mettre à jour l'état local
-        setProblemes(prevProblemes =>
-          prevProblemes.map(prob =>
-            prob.id === problemeId
-              ? {
-                ...prob,
-                statusValeur: 30,
-                statusNom: "Résolu",
-                statusId: 3
-              }
-              : prob
-          )
-        );
-        alert(`Problème #${problemeId} marqué comme résolu avec succès`);
-      } else {
-        throw new Error(`Erreur lors de la résolution: ${response.status}`);
-      }
+      await resoudreProbleme(problemeId);
+      setProblemes(prevProblemes =>
+        prevProblemes.map(prob =>
+          prob.id === problemeId
+            ? {
+              ...prob,
+              statusValeur: 30,
+              statusNom: "Résolu",
+              statusId: 3
+            }
+            : prob
+        )
+      );
+      alert(`Problème #${problemeId} marqué comme résolu avec succès`);
     } catch (error) {
       console.error("Erreur résolution problème:", error);
 
-      // Fallback: Mettre à jour localement si l'API n'est pas disponible
       if (window.confirm("L'API n'est pas disponible. Voulez-vous marquer ce problème comme résolu localement ?")) {
         setProblemes(prevProblemes =>
           prevProblemes.map(prob =>

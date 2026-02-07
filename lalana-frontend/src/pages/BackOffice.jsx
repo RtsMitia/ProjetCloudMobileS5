@@ -11,6 +11,7 @@ import {
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
+import { syncGlobal } from "../api/entrepriseService";
 
 export default function BackOffice() {
   const location = useLocation();
@@ -53,37 +54,19 @@ export default function BackOffice() {
     setSyncStatus(null);
     
     try {
-      const response = await fetch("http://localhost:8080/sync", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const data = await syncGlobal();
+      setSyncStatus({
+        type: "success",
+        message: data.message || "Synchronisation réussie !",
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSyncStatus({
-          type: "success",
-          message: data.message || "Synchronisation réussie !",
-        });
-      } else {
-        setSyncStatus({
-          type: "error",
-          message: "Erreur lors de la synchronisation",
-        });
-      }
     } catch (error) {
       setSyncStatus({
         type: "error",
-        message: "Impossible de se connecter au serveur",
+        message: error.message || "Impossible de se connecter au serveur",
       });
     } finally {
       setIsSyncing(false);
-      
-      // Supprimer le message de statut après 5 secondes
-      setTimeout(() => {
-        setSyncStatus(null);
-      }, 5000);
+      setTimeout(() => { setSyncStatus(null); }, 5000);
     }
   };
 

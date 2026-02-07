@@ -9,6 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import ProgressTable from "../component/ProgressTable";
 import StatisticsChart from "../component/StatisticsChart";
+import { fetchManagerStats } from "../api/problemeService";
 
 export default function ManagerDashboard() {
   const [samples, setSamples] = useState([]);
@@ -94,32 +95,12 @@ export default function ManagerDashboard() {
       }
 
       try {
-        // TODO: Update this endpoint when backend is ready with status history
-        const response = await fetch(
-          "http://localhost:8080/api/problemes/manager-stats"
-        );
-
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP! Statut: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success && data.data) {
-          // backend should return the same response shape we use in tests
-          setStats(data.data);
-          setSamples(data.data.samples || []);
-        } else {
-          console.error("Format de données invalide:", data);
-          const resp = getTestResponse();
-          setStats(resp.data);
-          setSamples(resp.data.samples || []);
-          setUseTestData(true);
-        }
+        const data = await fetchManagerStats();
+        setStats(data);
+        setSamples(data.samples || []);
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error);
         setError(error.message);
-        // Fallback to test data
         const resp = getTestResponse();
         setStats(resp.data);
         setSamples(resp.data.samples || []);

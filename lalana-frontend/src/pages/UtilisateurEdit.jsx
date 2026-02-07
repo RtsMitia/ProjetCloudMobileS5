@@ -8,6 +8,7 @@ import {
     CheckIcon,
     XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { fetchUserById, updateUser } from "../api/userService";
 
 export default function UtilisateurEdit() {
     const { id } = useParams();
@@ -23,36 +24,18 @@ export default function UtilisateurEdit() {
     });
 
     useEffect(() => {
-        const fetchUtilisateur = async () => {
+        const loadUtilisateur = async () => {
             setIsLoading(true);
             setError(null);
 
             try {
-                const response = await fetch(`http://localhost:8080/api/users/${id}`, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-
+                const userData = await fetchUserById(id);
+                setFormData({
+                    email: userData.email || "",
+                    password: "", 
+                    currentStatus: userData.currentStatus || 1,
+                    firebaseToken: userData.firebaseToken || "",
                 });
-
-                if (!response.ok) {
-                    throw new Error(`Erreur HTTP! Statut: ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log("Données utilisateur reçues:", data);
-
-                if (data.success && data.data) {
-                    setFormData({
-                        email: data.data.email || "",
-                        password: "", 
-                        currentStatus: data.data.currentStatus || 1,
-                        firebaseToken: data.data.firebaseToken || "",
-                    });
-                } else {
-                    throw new Error("Format de données invalide");
-                }
             } catch (error) {
                 console.error("Erreur lors du chargement de l'utilisateur:", error);
                 setError(error.message);
@@ -62,7 +45,7 @@ export default function UtilisateurEdit() {
         };
 
         if (id) {
-            fetchUtilisateur();
+            loadUtilisateur();
         }
     }, [id]);
 
@@ -90,29 +73,12 @@ export default function UtilisateurEdit() {
                 dataToSend.password = formData.password;
             }
 
-            const response = await fetch(`http://localhost:8080/api/users/${id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(dataToSend),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP! Statut: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            if (data.success) {
-                setSuccessMessage("Utilisateur mis à jour avec succès!");
-                // Rediriger après 1.5 secondes
-                setTimeout(() => {
-                    navigate("/backoffice/utilisateurs");
-                }, 1500);
-            } else {
-                throw new Error(data.message || "Erreur lors de la mise à jour");
-            }
+            await updateUser(id, dataToSend);
+            setSuccessMessage("Utilisateur mis à jour avec succès!");
+            // Rediriger après 1.5 secondes
+            setTimeout(() => {
+                navigate("/backoffice/utilisateurs");
+            }, 1500);
         } catch (error) {
             console.error("Erreur lors de la mise à jour:", error);
             setError(error.message);

@@ -10,6 +10,8 @@ import SignalementListPanel from "./SignalementListPanel";
 import ProblemMarker from "./ProblemMarker";
 import SignalementMarker from "./SignalementMarker";
 import DetailPanel from "./DetailPanel";
+import { fetchSignalementsMap } from "../api/signalementService";
+import { fetchProblemes as fetchProblemesAPI } from "../api/problemeService";
 
 // Fix pour les icônes de marqueurs par défaut
 import markerIcon from "leaflet/dist/images/marker-icon.png";
@@ -39,119 +41,32 @@ function MapOffLine() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const mapRef = useRef();
 
-  // Formater les données de signalements reçues de l'API
-  const formatSignalementData = (apiData) => {
-    return apiData.map(item => ({
-      id: item.id,
-      userId: item.user?.id || null,
-      userEmail: item.user?.email || "Utilisateur inconnu",
-      x: item.point?.y || 0, // Note: x correspond à longitude dans le JSON
-      y: item.point?.x || 0, // Note: y correspond à latitude dans le JSON
-      localisation: item.point?.localisation || "Localisation inconnue",
-      description: item.description || "Pas de description",
-      createdAt: item.createdAt || new Date().toISOString(),
-      statusLiebelle: item.status?.nom || "Non défini",
-      statusId: item.status?.id || 0,
-      valeur: item.status?.valeur || 0,
-      // Données originales si besoin
-      rawData: item
-    }));
-  };
-
-  // Formater les données de problèmes reçues de l'API
-  const formatProblemeData = (apiData) => {
-    return apiData.map(item => ({
-      id: item.id,
-      surface: item.surface || 0,
-      budgetEstime: item.budgetEstime || 0,
-      entrepriseId: item.entreprise?.id || null,
-      entrepriseName: item.entreprise?.nom || null,
-      entrepriseContact: item.entreprise?.telephone || null,
-      entrepriseAdresse: item.entreprise?.adresse || null,
-      statusId: item.problemeStatus?.id || 0,
-      statusNom: item.problemeStatus?.nom || "Non défini",
-      statusValeur: item.problemeStatus?.valeur || 0,
-      signalementId: item.signalement?.id || null,
-      // Données du signalement associé
-      userId: item.signalement?.user?.id || null,
-      userEmail: item.signalement?.user?.email || "Utilisateur inconnu",
-      x: item.signalement?.point?.y || 0, // longitude
-      y: item.signalement?.point?.x || 0, // latitude
-      localisation: item.signalement?.point?.localisation || "Localisation inconnue",
-      description: item.signalement?.description || "Pas de description",
-      signalementCreatedAt: item.signalement?.createdAt || null,
-      signalementStatus: item.signalement?.status?.nom || "Non défini",
-      signalementValeur: item.signalement?.status?.valeur || 0,
-      // Alias pour compatibilité avec le code existant
-      statusLiebelle: item.problemeStatus?.nom || "Non défini",
-      createdAt: item.signalement?.createdAt || new Date().toISOString(),
-      // Données originales si besoin
-      rawData: item
-    }));
-  };
-
   // Récupération des données depuis les APIs
   useEffect(() => {
-    const fetchSignalements = async () => {
+    const loadSignalements = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/signalement');
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success && data.data) {
-          const formattedData = formatSignalementData(data.data);
-          setSignalement(formattedData);
-          console.log(`${formattedData.length} signalements chargés depuis l'API`);
-        } else {
-          console.error("Format de données invalide pour signalements:", data);
-          setSignalement(getMockSignalements());
-        }
+        const formattedData = await fetchSignalementsMap();
+        setSignalement(formattedData);
+        console.log(`${formattedData.length} signalements chargés depuis l'API`);
       } catch (error) {
         console.error("Erreur lors du chargement des signalements:", error);
-        setSignalement(getMockSignalements());
+        setSignalement([]);
       }
     };
 
-    const fetchProblemes = async () => {
+    const loadProblemes = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/problemes');
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success && data.data) {
-          const formattedData = formatProblemeData(data.data);
-          setProbleme(formattedData);
-          console.log(`${formattedData.length} problèmes chargés depuis l'API`);
-        } else {
-          console.error("Format de données invalide pour problèmes:", data);
-          setProbleme(getMockProblemes());
-        }
+        const formattedData = await fetchProblemesAPI();
+        setProbleme(formattedData);
+        console.log(`${formattedData.length} problèmes chargés depuis l'API`);
       } catch (error) {
         console.error("Erreur lors du chargement des problèmes:", error);
-        setProbleme(getMockProblemes());
+        setProbleme([]);
       }
     };
 
-    const getMockSignalements = () => {
-      return [
-      ];
-    };
-
-    const getMockProblemes = () => {
-      return [
-      ];
-    };
-
-    fetchSignalements();
-    fetchProblemes();
+    loadSignalements();
+    loadProblemes();
   }, []);
 
   // Filtrage des données
