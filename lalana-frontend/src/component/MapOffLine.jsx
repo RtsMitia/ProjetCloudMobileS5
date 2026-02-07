@@ -92,7 +92,7 @@ function MapOffLine() {
   useEffect(() => {
     const fetchSignalements = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/signalement');
+        const response = await fetch('http://localhost:8080/api/signalements');
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

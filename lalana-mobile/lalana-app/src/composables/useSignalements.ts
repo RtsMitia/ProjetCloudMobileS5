@@ -1,4 +1,5 @@
 import { ref, computed, onUnmounted } from 'vue';
+import { signalementAddService } from '@/services/firebase/signalement-add.service';
 import { signalementService } from '@/services/firebase/signalement.service';
 import { uploadSignalementPhotos } from '@/services/cloudinary.service';
 import type { Signalement, SignalementRequest } from '@/types/firestore';
@@ -71,7 +72,7 @@ export function useSignalements() {
         createdAt: new Date().toISOString()
       };
 
-      const id = await signalementService.createSignalement(signalementData);
+      const id = await signalementAddService.createSignalement(signalementData);
       console.log('Signalement créé:', id);
       if (photos.length > 0) {
         try {
