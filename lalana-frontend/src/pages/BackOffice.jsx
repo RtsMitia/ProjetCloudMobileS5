@@ -207,7 +207,7 @@ export default function BackOffice() {
       </div>
 
       {/* Ajout de styles d'animation */}
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from {
             opacity: 0;

@@ -11,7 +11,7 @@ import ProblemMarker from "./ProblemMarker";
 import SignalementMarker from "./SignalementMarker";
 import DetailPanel from "./DetailPanel";
 import { fetchSignalementsMap } from "../api/signalementService";
-import { fetchProblemes as fetchProblemesAPI } from "../api/problemeService";
+import { fetchProblemesMap as fetchProblemesAPI } from "../api/problemeService";
 
 // Fix pour les icônes de marqueurs par défaut
 import markerIcon from "leaflet/dist/images/marker-icon.png";
@@ -33,7 +33,8 @@ function MapOffLine() {
   const [showProblemes, setShowProblemes] = useState(true);
   const [showList, setShowList] = useState(false);
   const [listType, setListType] = useState("problemes"); // "problemes" ou "signalements"
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatusProbleme, setFilterStatusProbleme] = useState("all");
+  const [filterStatusSignalement, setFilterStatusSignalement] = useState("all");
   const [selectedProblemId, setSelectedProblemId] = useState(null);
   const [selectedSignalementId, setSelectedSignalementId] = useState(null);
   const [detailPanel, setDetailPanel] = useState({ type: null, data: null });
@@ -73,16 +74,13 @@ function MapOffLine() {
   const getProblemesFiltres = () => {
     let filtered = probleme;
 
-    if (filterStatus !== "all") {
-      switch (filterStatus) {
+    if (filterStatusProbleme !== "all") {
+      switch (filterStatusProbleme) {
         case "pending":
           filtered = filtered.filter(p => p.statusValeur === 10);
           break;
         case "inprogress":
           filtered = filtered.filter(p => p.statusValeur === 20);
-          break;
-        case "resolved":
-          filtered = filtered.filter(p => p.statusValeur === 30);
           break;
       }
     }
@@ -104,16 +102,13 @@ function MapOffLine() {
   const getSignalementsFiltres = () => {
     let filtered = signalement;
 
-    if (filterStatus !== "all") {
-      switch (filterStatus) {
+    if (filterStatusSignalement !== "all") {
+      switch (filterStatusSignalement) {
         case "pending":
           filtered = filtered.filter(s => s.valeur === 10);
           break;
         case "inprogress":
           filtered = filtered.filter(s => s.valeur === 20);
-          break;
-        case "resolved":
-          filtered = filtered.filter(s => s.valeur === 30);
           break;
       }
     }
@@ -203,8 +198,10 @@ function MapOffLine() {
         onToggleSignalements={() => setShowSignalements(!showSignalements)}
         showProblemes={showProblemes}
         onToggleProblemes={() => setShowProblemes(!showProblemes)}
-        filterStatus={filterStatus}
-        onFilterChange={setFilterStatus}
+        filterStatusProbleme={filterStatusProbleme}
+        onFilterProblemeChange={setFilterStatusProbleme}
+        filterStatusSignalement={filterStatusSignalement}
+        onFilterSignalementChange={setFilterStatusSignalement}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         signalementCount={signalement.length}
@@ -303,8 +300,8 @@ function MapOffLine() {
                   selectedProblemId={selectedProblemId}
                   onProblemClick={handleProblemClick}
                   onClose={() => setShowList(false)}
-                  filterStatus={filterStatus}
-                  onFilterChange={setFilterStatus}
+                  filterStatus={filterStatusProbleme}
+                  onFilterChange={setFilterStatusProbleme}
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                 />
@@ -314,8 +311,8 @@ function MapOffLine() {
                   selectedSignalementId={selectedSignalementId}
                   onSignalementClick={handleSignalementClick}
                   onClose={() => setShowList(false)}
-                  filterStatus={filterStatus}
-                  onFilterChange={setFilterStatus}
+                  filterStatus={filterStatusSignalement}
+                  onFilterChange={setFilterStatusSignalement}
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                 />
@@ -326,7 +323,7 @@ function MapOffLine() {
       </div>
 
       {/* Styles CSS */}
-      <style jsx>{`
+      <style>{`
         .selected-marker {
           filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
           z-index: 1000 !important;

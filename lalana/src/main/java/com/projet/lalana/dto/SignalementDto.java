@@ -2,6 +2,7 @@ package com.projet.lalana.dto;
 
 import com.projet.lalana.model.Point;
 import com.projet.lalana.model.Signalement;
+import com.projet.lalana.model.SignalementImage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -49,10 +50,23 @@ public class SignalementDto {
             b.valeur(s.getStatus().getValeur());
         }
 
-        // Signalement entity currently doesn't have an images relationship in the model.
-        // Initialize images as empty list for now; it may be populated by service layer when available.
+        // Map images from entity
         SignalementDto dto = b.build();
-        dto.setImages(new ArrayList<>());
+        List<SignalementImageDTO> imageDtos = new ArrayList<>();
+        try {
+            if (s.getImages() != null) {
+                for (SignalementImage img : s.getImages()) {
+                    SignalementImageDTO imgDto = new SignalementImageDTO();
+                    imgDto.setCheminLocal(img.getCheminLocal());
+                    imgDto.setCheminOnline(img.getCheminOnline());
+                    imgDto.setNomFichier(img.getNomFichier());
+                    imageDtos.add(imgDto);
+                }
+            }
+        } catch (Exception e) {
+            // Lazy loading may fail if session is closed
+        }
+        dto.setImages(imageDtos);
         return dto;
     }
     

@@ -12,11 +12,15 @@ import {
   PhoneIcon,
   HashtagIcon,
   ArrowsPointingOutIcon,
+  PhotoIcon,
 } from "@heroicons/react/24/outline";
 import StatusBadge from "./StatusBadge";
 import { formatCurrency, formatDate } from "../utils/helpers.jsx";
+import { useState } from "react";
 
 function DetailPanel({ type, data, onClose }) {
+  const [selectedImage, setSelectedImage] = useState(null);
+
   if (!data) return null;
 
   return (
@@ -79,6 +83,37 @@ function DetailPanel({ type, data, onClose }) {
             {data.description}
           </p>
         </div>
+
+        {/* Images */}
+        {data.images && data.images.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <PhotoIcon className="h-4 w-4 text-gray-500" />
+              <h3 className="text-sm font-semibold text-gray-700">
+                Photos ({data.images.length})
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pl-6">
+              {data.images.map((img, index) => (
+                <div
+                  key={index}
+                  className="relative group cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:border-blue-400 transition-colors"
+                  onClick={() => setSelectedImage(img)}
+                >
+                  <img
+                    src={img.url}
+                    alt={img.nomFichier || `Image ${index + 1}`}
+                    className="w-full h-24 object-cover"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Utilisateur */}
         <div className="space-y-1">
@@ -182,6 +217,27 @@ function DetailPanel({ type, data, onClose }) {
           </>
         )}
       </div>
+
+      {/* Modal image plein écran */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black/80 z-[2000] flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button
+            onClick={() => setSelectedImage(null)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-2 transition-colors"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+          <img
+            src={selectedImage.url}
+            alt={selectedImage.nomFichier || "Image"}
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

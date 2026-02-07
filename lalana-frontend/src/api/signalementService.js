@@ -1,4 +1,5 @@
 import API_BASE_URL from "./config";
+import { pathImages } from "../utils/config";
 
 // ===================== SIGNALEMENTS =====================
 
@@ -23,6 +24,10 @@ export const formatSignalementData = (item) => ({
   status: item.status?.nom || "Non défini",
   valeur: item.status?.valeur || 0,
   rawData: item,
+  images: (item.images || []).map((img) => ({
+    url: img.nomFichier ? `${pathImages()}${img.nomFichier}` : null,
+    nomFichier: img.nomFichier || "Image",
+  })).filter((img) => img.url),
 });
 
 /**
@@ -47,7 +52,7 @@ export const fetchSignalements = async () => {
  * Récupérer tous les signalements (endpoint alternatif pour la carte)
  */
 export const fetchSignalementsMap = async () => {
-  const response = await fetch(`${API_BASE_URL}/api/signalements`);
+  const response = await fetch(`${API_BASE_URL}/api/signalements/nonresolus`);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = await response.json();
   if (data.success && data.data) {

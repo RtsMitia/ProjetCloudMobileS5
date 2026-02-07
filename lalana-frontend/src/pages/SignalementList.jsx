@@ -463,7 +463,7 @@ export default function SignalementsList() {
       </div>
 
       {/* Styles d'animation */}
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from {
             opacity: 0;

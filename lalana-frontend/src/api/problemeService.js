@@ -1,4 +1,5 @@
 import API_BASE_URL from "./config";
+import { pathImages } from "../utils/config";
 
 // ===================== PROBLEMES =====================
 
@@ -29,6 +30,10 @@ export const formatProblemeData = (item) => ({
   statusLiebelle: item.problemeStatus?.nom || "Non défini",
   createdAt: item.signalement?.createdAt || new Date().toISOString(),
   rawData: item,
+  images: (item.signalement?.images || []).map((img) => ({
+    url: img.nomFichier ? `${pathImages()}${img.nomFichier}` : null,
+    nomFichier: img.nomFichier || "Image",
+  })).filter((img) => img.url),
 });
 
 /**
@@ -41,6 +46,16 @@ export const formatProblemeList = (apiData) => apiData.map(formatProblemeData);
  */
 export const fetchProblemes = async () => {
   const response = await fetch(`${API_BASE_URL}/api/problemes`);
+  if (!response.ok) throw new Error(`Erreur HTTP! Statut: ${response.status}`);
+  const data = await response.json();
+  if (data.success && data.data) {
+    return formatProblemeList(data.data);
+  }
+  throw new Error("Format de données invalide");
+};
+
+export const fetchProblemesMap = async () => {
+  const response = await fetch(`${API_BASE_URL}/api/problemes/nonresolus`);
   if (!response.ok) throw new Error(`Erreur HTTP! Statut: ${response.status}`);
   const data = await response.json();
   if (data.success && data.data) {
