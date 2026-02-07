@@ -5,3 +5,4 @@ export { useMap } from './useMap';
 export { useProblemes } from './useProblemes';
 export { usePhoto } from './usePhoto';
 export { useNotifications } from './useNotifications';
+export { useNotificationDisplay } from './useNotificationDisplay';

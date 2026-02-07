@@ -1,5 +1,6 @@
 import { ref, onUnmounted } from 'vue';
 import { notificationService } from '@/services';
+import { useNotificationDisplay } from './useNotificationDisplay';
 import type { PluginListenerHandle } from '@capacitor/core';
 import type { PushNotificationSchema } from '@capacitor/push-notifications';
 
@@ -11,6 +12,7 @@ export function useNotifications() {
     const error = ref<string | null>(null);
 
     let listeners: PluginListenerHandle[] = [];
+    const { showForegroundNotification } = useNotificationDisplay();
 
     async function initializeNotifications(): Promise<boolean> {
         if (isInitialized.value) {
@@ -26,14 +28,19 @@ export function useNotifications() {
                 isInitialized.value = true;
                 notificationPermission.value = 'granted';
                 fcmToken.value = notificationService.getToken();
+
                 const foregroundListener = await notificationService.addPushReceivedListener(
                     (notification: PushNotificationSchema) => {
                         console.log('[useNotifications] Notification foreground reçue:', notification);
-                        lastNotification.value = {
+                        
+                        const notificationData = {
                             title: notification.title || 'Notification',
                             body: notification.body || '',
                             data: notification.data
                         };
+                        
+                        lastNotification.value = notificationData;
+                        showForegroundNotification(notificationData);
                     }
                 );
                 listeners.push(foregroundListener);
