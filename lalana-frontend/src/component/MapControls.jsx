@@ -120,6 +120,7 @@ function MapControls({
 
               </button>
             )}
+            {/* Manager link removed (temporary) */}
 
             <button
               onClick={onToggleFullscreen}
