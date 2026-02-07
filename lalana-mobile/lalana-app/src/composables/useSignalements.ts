@@ -1,5 +1,6 @@
 import { ref, computed, onUnmounted } from 'vue';
 import { signalementService } from '@/services/firebase/signalement.service';
+import { uploadSignalementPhotos } from '@/services/cloudinary.service';
 import type { Signalement, SignalementRequest } from '@/types/firestore';
 import { useAuth } from './useAuth';
 
@@ -48,7 +49,8 @@ export function useSignalements() {
     lat: number,
     lng: number,
     description: string,
-    localisation: string
+    localisation: string,
+    photos: { base64Data?: string }[] = []
   ): Promise<string> {
     if (!currentUser.value) {
       throw new Error('Utilisateur non connecté');
@@ -70,11 +72,23 @@ export function useSignalements() {
       };
 
       const id = await signalementService.createSignalement(signalementData);
-      console.log('✅ Signalement créé:', id);
+      console.log('Signalement créé:', id);
+      if (photos.length > 0) {
+        try {
+          const photoUrls = await uploadSignalementPhotos(photos, id);
+          if (photoUrls.length > 0) {
+            await signalementService.updateSignalementPhotos(id, photoUrls);
+            console.log(`${photoUrls.length} photo(s) uploadée(s) sur Cloudinary`);
+          }
+        } catch (photoError) {
+          console.error('Erreur upload photos Cloudinary:', photoError);
+        }
+      }
+
       return id;
     } catch (e: any) {
       error.value = 'Impossible de créer le signalement';
-      console.error('❌ Erreur:', e);
+      console.error('Erreur:', e);
       throw e;
     } finally {
       isLoading.value = false;
