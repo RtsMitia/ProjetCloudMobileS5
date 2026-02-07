@@ -9,6 +9,7 @@ import ProblemListPanel from "./ProblemListPanel";
 import SignalementListPanel from "./SignalementListPanel";
 import ProblemMarker from "./ProblemMarker";
 import SignalementMarker from "./SignalementMarker";
+import DetailPanel from "./DetailPanel";
 
 // Fix pour les icônes de marqueurs par défaut
 import markerIcon from "leaflet/dist/images/marker-icon.png";
@@ -33,6 +34,7 @@ function MapOffLine() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedProblemId, setSelectedProblemId] = useState(null);
   const [selectedSignalementId, setSelectedSignalementId] = useState(null);
+  const [detailPanel, setDetailPanel] = useState({ type: null, data: null });
   const [searchQuery, setSearchQuery] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const mapRef = useRef();
@@ -138,52 +140,11 @@ function MapOffLine() {
       }
     };
 
-    // Données mockées pour les signalements (fallback)
     const getMockSignalements = () => {
       return [
-        {
-          id: 1,
-          userId: 1,
-          userEmail: "alice@example.com",
-          x: 47.5218,
-          y: -18.9089,
-          localisation: "Antananarivo - Avenue de l'Independance",
-          description: "Nid-de-poule important sur la chaussee principale, risque pour les vehicules",
-          createdAt: "2024-01-15T09:30:00",
-          statusLiebelle: "Nouveau",
-          statusId: 1,
-          valeur: 10,
-        },
-        {
-          id: 2,
-          userId: 2,
-          userEmail: "bob@example.com",
-          x: 49.3958,
-          y: -18.1443,
-          localisation: "Toamasina - Port",
-          description: "eclairage public defectueux depuis 3 jours, quartier sombre le soir",
-          createdAt: "2024-01-16T14:20:00",
-          statusLiebelle: "En cours",
-          statusId: 2,
-          valeur: 20,
-        },
-        {
-          id: 3,
-          userId: 1,
-          userEmail: "alice@example.com",
-          x: 47.0331,
-          y: -19.8689,
-          localisation: "Antsirabe - Centre ville",
-          description: "Caniveau bouche causant des inondations lors des pluies",
-          createdAt: "2024-01-17T11:45:00",
-          statusLiebelle: "Nouveau",
-          statusId: 1,
-          valeur: 10,
-        },
       ];
     };
 
-    // Données mockées pour les problèmes (fallback)
     const getMockProblemes = () => {
       return [
       ];
@@ -263,6 +224,10 @@ function MapOffLine() {
   const handleProblemClick = (problemId) => {
     setSelectedProblemId(problemId);
     setSelectedSignalementId(null);
+    const prob = probleme.find(p => p.id === problemId);
+    if (prob) {
+      setDetailPanel({ type: "probleme", data: prob });
+    }
     if (window.innerWidth < 768) {
       setShowList(false);
     }
@@ -271,14 +236,25 @@ function MapOffLine() {
   const handleSignalementClick = (signalementId) => {
     setSelectedSignalementId(signalementId);
     setSelectedProblemId(null);
+    const sig = signalement.find(s => s.id === signalementId);
+    if (sig) {
+      setDetailPanel({ type: "signalement", data: sig });
+    }
     if (window.innerWidth < 768) {
       setShowList(false);
     }
   };
 
+  const handleCloseDetailPanel = () => {
+    setDetailPanel({ type: null, data: null });
+    setSelectedProblemId(null);
+    setSelectedSignalementId(null);
+  };
+
   const handleClearSelection = () => {
     setSelectedProblemId(null);
     setSelectedSignalementId(null);
+    setDetailPanel({ type: null, data: null });
   };
 
   const handleFullscreenToggle = () => {
@@ -323,7 +299,7 @@ function MapOffLine() {
       {/* Contenu principal */}
       <div className="flex h-[calc(100vh-140px)]">
         {/* Carte */}
-        <div className={`${showList ? 'w-full md:w-2/3' : 'w-full'} transition-all duration-300`}>
+        <div className={`${showList ? 'w-full md:w-2/3' : 'w-full'} transition-all duration-300 relative`}>
           <div className="h-full bg-white">
             <MapContainer
               center={[-18.8792, 47.5079]}
@@ -353,6 +329,7 @@ function MapOffLine() {
                 <SignalementMarker
                   key={`signalement-${sig.id}`}
                   signalement={sig}
+                  onClick={handleSignalementClick}
                 />
               ))}
 
@@ -367,6 +344,15 @@ function MapOffLine() {
               ))}
             </MapContainer>
           </div>
+
+          {/* Panneau de détail à gauche (affiché au clic sur un marqueur) */}
+          {detailPanel.data && (
+            <DetailPanel
+              type={detailPanel.type}
+              data={detailPanel.data}
+              onClose={handleCloseDetailPanel}
+            />
+          )}
         </div>
 
         {/* Panneau de liste avec switch */}
@@ -430,11 +416,28 @@ function MapOffLine() {
           filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
           z-index: 1000 !important;
         }
-        .leaflet-popup-content {
-          margin: 12px !important;
+        .leaflet-tooltip {
+          padding: 0 !important;
+          border: none !important;
+          background: white !important;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+          border-radius: 8px !important;
         }
-        .leaflet-popup {
-          z-index: 1001 !important;
+        .leaflet-tooltip-top:before {
+          border-top-color: white !important;
+        }
+        @keyframes slideIn {
+          from {
+            transform: translateX(-100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        .animate-slide-in {
+          animation: slideIn 0.3s ease-out;
         }
       `}</style>
     </div>
