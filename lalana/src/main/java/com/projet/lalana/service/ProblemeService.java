@@ -253,4 +253,14 @@ public class ProblemeService {
         }
     }
 
+    public List<Probleme> findNonResolus() {
+        try {
+            return problemeRepository.findAllWithStatusOther();
+        } catch (Exception e) {
+            logger.error("Erreur lors de findNonResolus", e);
+            throw new ServiceException("Erreur lors de la récupération des problèmes non résolus", e);
+        }
+    }
+
 }
+    

@@ -10,6 +10,7 @@ import {
   CloudArrowUpIcon,
   CloudArrowDownIcon,
 } from "@heroicons/react/24/outline";
+import { fetchUsers, deblockUser } from "../api/userService";
 
 export default function UtilisateursList() {
   const navigate = useNavigate();
@@ -21,38 +22,12 @@ export default function UtilisateursList() {
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
-    const fetchUtilisateurs = async () => {
+    const loadUtilisateurs = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('http://localhost:8080/api/users');
-
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP! Statut: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success && data.data) {
-          // Formater les données
-          const formattedData = data.data.map(user => ({
-            id: user.id,
-            email: user.email || "Email non disponible",
-            password: user.password,
-            firebaseToken: user.firebaseToken,
-            currentStatus: user.currentStatus || 0,
-            // statut
-            statut: user.currentStatus === 1 ? "Actif" : "Bloqué",
-            // Dérivé de l'email pour le nom d'affichage
-            displayName: user.email.split('@')[0],
-            rawData: user
-          }));
-
-          setUtilisateurs(formattedData);
-          console.log(`${formattedData.length} utilisateurs chargés depuis l'API`);
-        } else {
-          console.error("Format de données invalide:", data);
-          setUtilisateurs(getMockUtilisateurs());
-        }
+        const formattedData = await fetchUsers();
+        setUtilisateurs(formattedData);
+        console.log(`${formattedData.length} utilisateurs chargés depuis l'API`);
       } catch (error) {
         console.error("Erreur lors du chargement des utilisateurs:", error);
         setError(error.message);
@@ -104,7 +79,7 @@ export default function UtilisateursList() {
       ];
     };
 
-    fetchUtilisateurs();
+    loadUtilisateurs();
   }, []);
 
   const handleModifierUtilisateur = (userId) => {
@@ -164,26 +139,15 @@ export default function UtilisateursList() {
   // Fonction pour débloquer un utilisateur
   const handleDeblockUser = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/users/${userId}/deblock`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        // Mettre à jour l'état local
-        setUtilisateurs(prevUsers =>
-          prevUsers.map(user =>
-            user.id === userId
-              ? { ...user, currentStatus: 1, statut: "Actif" }
-              : user
-          )
-        );
-        alert(`Utilisateur #${userId} débloqué avec succès`);
-      } else {
-        throw new Error(`Erreur lors du déblocage: ${response.status}`);
-      }
+      await deblockUser(userId);
+      setUtilisateurs(prevUsers =>
+        prevUsers.map(user =>
+          user.id === userId
+            ? { ...user, currentStatus: 1, statut: "Actif" }
+            : user
+        )
+      );
+      alert(`Utilisateur #${userId} débloqué avec succès`);
     } catch (error) {
       console.error("Erreur déblocage utilisateur:", error);
       alert("Erreur lors du déblocage de l'utilisateur");

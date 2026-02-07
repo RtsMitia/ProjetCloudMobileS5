@@ -390,4 +390,13 @@ public class SignalementService {
         return probleme;
     }
 
+    public List<Signalement> getSignalementsNonResolus() {
+        try {
+            return signalementRepository.findAllWithStatusOther();
+        } catch (Exception e) {
+            logger.error("Erreur lors de getSignalementsNonResolus", e);
+            throw new ServiceException("Erreur lors de la récupération des signalements non résolus", e);
+        }
+    }
+
 }

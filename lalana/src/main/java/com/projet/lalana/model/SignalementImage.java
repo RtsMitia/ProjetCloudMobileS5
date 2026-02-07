@@ -1,5 +1,6 @@
 package com.projet.lalana.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,6 +19,7 @@ public class SignalementImage {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "signalement_id")
+    @JsonIgnore
     private Signalement signalement;
 
     @Column(name = "chemin_local")

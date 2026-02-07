@@ -15,6 +15,11 @@ import {
   CheckCircleIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
+import {
+  fetchSignalements as fetchSignalementsAPI,
+  syncSignalementsFirebase,
+  envoyerSignalementTechnicien,
+} from "../api/signalementService";
 
 export default function SignalementsList() {
   const [signalements, setSignalements] = useState([]);
@@ -27,28 +32,7 @@ export default function SignalementsList() {
   const navigate = useNavigate();
 
   // Formater les données de signalements reçues de l'API
-  const formatSignalementData = (apiData) => {
-    return apiData.map(item => ({
-      id: item.id,
-      userId: item.user?.id || null,
-      userEmail: item.user?.email || "Utilisateur inconnu",
-      userStatus: item.user?.currentStatus || 1, // 1 = Actif, 0 = Bloqué
-      x: item.point?.y || 0, // longitude (API: point.y = longitude)
-      y: item.point?.x || 0, // latitude (API: point.x = latitude)
-      localisation: item.point?.localisation || "Localisation inconnue",
-      description: item.description || "Pas de description",
-      createdAt: item.createdAt || new Date().toISOString(),
-      statusId: item.status?.id || 0,
-      statusNom: item.status?.nom || "Non défini",
-      statusValeur: item.status?.valeur || 0,
-      firestoreSynced: item.firestoreSynced || false,
-      // Alias pour compatibilité
-      status: item.status?.nom || "Non défini",
-      valeur: item.status?.valeur || 0,
-      // Données originales
-      rawData: item
-    }));
-  };
+  // (déjà géré par signalementService)
 
   // Fonction pour synchroniser avec Firebase
   const handleSyncFirebase = async () => {
@@ -56,68 +40,35 @@ export default function SignalementsList() {
     setSyncStatus(null);
     
     try {
-      const response = await fetch('http://localhost:8080/api/signalements/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const data = await syncSignalementsFirebase();
+      setSyncStatus({
+        type: "success",
+        message: data.message || "Synchronisation Firebase réussie !",
+        details: data.details || null
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setSyncStatus({
-          type: "success",
-          message: data.message || "Synchronisation Firebase réussie !",
-          details: data.details || null
-        });
-        
-        // Rafraîchir les données après synchronisation
-        fetchSignalements();
-      } else {
-        const errorData = await response.json().catch(() => ({ error: "Erreur inconnue" }));
-        setSyncStatus({
-          type: "error",
-          message: errorData.error || `Erreur HTTP ${response.status}`,
-          details: errorData.details || null
-        });
-      }
+      // Rafraîchir les données après synchronisation
+      loadSignalements();
     } catch (error) {
       console.error("Erreur lors de la synchronisation Firebase:", error);
       setSyncStatus({
         type: "error",
-        message: "Impossible de se connecter au serveur",
-        details: error.message
+        message: error.message || "Impossible de se connecter au serveur",
+        details: null
       });
     } finally {
       setIsSyncing(false);
-      
-      // Supprimer le message de statut après 5 secondes
-      setTimeout(() => {
-        setSyncStatus(null);
-      }, 5000);
+      setTimeout(() => { setSyncStatus(null); }, 5000);
     }
   };
 
   // Récupérer les signalements depuis l'API
-  const fetchSignalements = async () => {
+  const loadSignalements = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/signalements');
-      
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP! Statut: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.success && data.data) {
-        const formattedData = formatSignalementData(data.data);
-        setSignalements(formattedData);
-        console.log(`${formattedData.length} signalements chargés depuis l'API`);
-      } else {
-        console.error("Format de données invalide:", data);
-        setSignalements(getMockSignalements());
-      }
+      const formattedData = await fetchSignalementsAPI();
+      setSignalements(formattedData);
+      console.log(`${formattedData.length} signalements chargés depuis l'API`);
     } catch (error) {
       console.error("Erreur lors du chargement des signalements:", error);
       setError(error.message);
@@ -128,132 +79,36 @@ export default function SignalementsList() {
   };
 
   useEffect(() => {
-    fetchSignalements();
+    loadSignalements();
   }, []);
 
   // Données mockées pour fallback
   const getMockSignalements = () => {
     return [
-      {
-        id: 1,
-        userId: 1,
-        userEmail: "alice@example.com",
-        userStatus: 1,
-        x: 47.5218,
-        y: -18.9089,
-        localisation: "Antananarivo - Avenue de l'Independance",
-        description: "Nid-de-poule important sur la chaussee principale, risque pour les vehicules",
-        createdAt: "2024-01-15T09:30:00",
-        statusId: 1,
-        statusNom: "Nouveau",
-        statusValeur: 10,
-        firestoreSynced: false,
-        status: "Nouveau",
-        valeur: 10,
-      },
-      {
-        id: 2,
-        userId: 2,
-        userEmail: "bob@example.com",
-        userStatus: 0,
-        x: 49.3958,
-        y: -18.1443,
-        localisation: "Toamasina - Port",
-        description: "eclairage public defectueux depuis 3 jours, quartier sombre le soir",
-        createdAt: "2024-01-16T14:20:00",
-        statusId: 2,
-        statusNom: "En cours",
-        statusValeur: 20,
-        firestoreSynced: false,
-        status: "En cours",
-        valeur: 20,
-      },
-      {
-        id: 3,
-        userId: 1,
-        userEmail: "alice@example.com",
-        userStatus: 1,
-        x: 47.0331,
-        y: -19.8689,
-        localisation: "Antsirabe - Centre ville",
-        description: "Caniveau bouche causant des inondations lors des pluies",
-        createdAt: "2024-01-17T11:45:00",
-        statusId: 1,
-        statusNom: "Nouveau",
-        statusValeur: 10,
-        firestoreSynced: false,
-        status: "Nouveau",
-        valeur: 10,
-      },
-      {
-        id: 4,
-        userId: 2,
-        userEmail: "bob@example.com",
-        userStatus: 0,
-        x: 46.3167,
-        y: -15.7167,
-        localisation: "Mahajanga - Boulevard Poincare",
-        description: "Panneau de signalisation tombe, danger pour la circulation",
-        createdAt: "2024-01-18T16:10:00",
-        statusId: 3,
-        statusNom: "Résolu",
-        statusValeur: 30,
-        firestoreSynced: false,
-        status: "Résolu",
-        valeur: 30,
-      },
-      {
-        id: 5,
-        userId: 1,
-        userEmail: "alice@example.com",
-        userStatus: 1,
-        x: 47.0859,
-        y: -21.4546,
-        localisation: "Fianarantsoa - Rue du Commerce",
-        description: "Dechets accumules non collectes depuis une semaine, odeurs nauseabondes",
-        createdAt: "2024-01-19T08:15:00",
-        statusId: 2,
-        statusNom: "En cours",
-        statusValeur: 20,
-        firestoreSynced: false,
-        status: "En cours",
-        valeur: 20,
-      }
+      
     ];
   };
 
   // Fonction pour envoyer un signalement à un technicien
   const handleEnvoyerTechnicien = async (signalementId) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/signalements/${signalementId}/sendtech`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        // Mettre à jour le statut localement
-        setSignalements(prevSignalements => 
-          prevSignalements.map(sig => 
-            sig.id === signalementId 
-              ? { 
-                  ...sig, 
-                  statusValeur: 20, 
-                  statusNom: "En cours",
-                  statusId: 2
-                } 
-              : sig
-          )
-        );
-        alert(`Signalement #${signalementId} envoyé à un technicien avec succès`);
-      } else {
-        throw new Error(`Erreur lors de l'envoi au technicien: ${response.status}`);
-      }
+      await envoyerSignalementTechnicien(signalementId);
+      setSignalements(prevSignalements => 
+        prevSignalements.map(sig => 
+          sig.id === signalementId 
+            ? { 
+                ...sig, 
+                statusValeur: 20, 
+                statusNom: "En cours",
+                statusId: 2
+              } 
+            : sig
+        )
+      );
+      alert(`Signalement #${signalementId} envoyé à un technicien avec succès`);
     } catch (error) {
       console.error("Erreur envoi technicien:", error);
       
-      // Fallback: Mettre à jour localement si l'API n'est pas disponible
       if (window.confirm("L'API n'est pas disponible. Voulez-vous marquer ce signalement comme 'En cours' localement ?")) {
         setSignalements(prevSignalements => 
           prevSignalements.map(sig => 
@@ -608,7 +463,7 @@ export default function SignalementsList() {
       </div>
 
       {/* Styles d'animation */}
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from {
             opacity: 0;

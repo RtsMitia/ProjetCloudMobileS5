@@ -46,7 +46,7 @@ function ProblemListPanel({
   });
 
   return (
-    <div className="w-full md:w-1/3 bg-white border-l border-gray-200 shadow-lg overflow-y-auto">
+    <div className="w-full bg-white border-l border-gray-200 shadow-lg overflow-y-auto">
       <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
         <div className="flex justify-between items-center">
           <div>

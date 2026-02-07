@@ -5,6 +5,8 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+import java.util.List;
+
 @Entity
 @Table(name = "signalement")
 @Getter
@@ -37,4 +39,7 @@ public class Signalement {
 
     @Column(name = "firestore_synced", nullable = false , columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean firestoreSynced;
+
+    @OneToMany(mappedBy = "signalement", fetch = FetchType.LAZY)
+    private List<SignalementImage> images;
 }

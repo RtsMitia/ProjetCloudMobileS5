@@ -9,6 +9,7 @@ import {
   ShieldCheckIcon,
   BuildingOffice2Icon,
 } from "@heroicons/react/24/outline";
+import { signin } from "../api/authService";
 
 function Login() {
   const navigate = useNavigate();
@@ -45,25 +46,8 @@ function Login() {
 
     try {
       // Appel API d'authentification
-      const response = await fetch('http://localhost:8080/auth/signin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
-
-      const data = await response.json();
-      console.log(`data ${data}`);
+      const data = await signin(formData.email, formData.password);
       console.log(data);
-
-      if (!response.ok) {
-        // Gérer les erreurs d'authentification
-        throw new Error(data.error || "Erreur lors de l'authentification");
-      }
 
       // Vérifier si un token est présent dans la réponse
       if (!data.user.token || data.user.token.trim() === "") {
