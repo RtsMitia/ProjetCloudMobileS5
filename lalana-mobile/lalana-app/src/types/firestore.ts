@@ -146,3 +146,15 @@ export interface StatusProblemeRef {
   valeur: number;
   ordre: number;
 }
+
+/**
+ * Interface pour les tokens FCM des utilisateurs (collection userTokens)
+ */
+export interface UserToken {
+  userId: string;
+  email: string;
+  fcmToken: string;
+  platform: 'ios' | 'android' | 'web';
+  updatedAt: Timestamp;
+  createdAt: Timestamp;
+}
