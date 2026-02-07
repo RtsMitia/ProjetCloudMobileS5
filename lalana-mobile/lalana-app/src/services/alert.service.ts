@@ -1,4 +1,14 @@
-import { alertController } from '@ionic/vue';
+import { alertController, modalController } from '@ionic/vue';
+import SignalementFormModal from '@/components/SignalementFormModal.vue';
+
+/**
+ * Interface pour les données du formulaire avec photos
+ */
+export interface SignalementFormData {
+  description: string;
+  localisation: string;
+  photos: { filepath: string; webviewPath: string; base64Data?: string }[];
+}
 
 /**
  * Service pour gérer les alertes/dialogs de l'application
@@ -60,38 +70,23 @@ export const alertService = {
   },
 
   /**
-   * Afficher un formulaire pour créer un signalement
+   * Afficher un formulaire pour créer un signalement avec support photos.
+   * Ouvre un modal avec champs description, localisation et boutons caméra/galerie.
    */
-  async showSignalementForm(): Promise<{ description: string; localisation: string } | null> {
-    return new Promise(async (resolve) => {
-      const alert = await alertController.create({
-        header: 'Décrire le problème',
-        inputs: [
-          {
-            name: 'description',
-            type: 'textarea',
-            placeholder: 'Décrivez le problème routier (nid-de-poule, route dégradée, etc.)'
-          },
-          {
-            name: 'localisation',
-            type: 'text',
-            placeholder: 'Adresse ou nom du lieu (optionnel)'
-          }
-        ],
-        buttons: [
-          {
-            text: 'Annuler',
-            role: 'cancel',
-            handler: () => resolve(null)
-          },
-          {
-            text: 'Envoyer',
-            handler: (data) => resolve(data)
-          }
-        ]
-      });
-      await alert.present();
+  async showSignalementForm(): Promise<SignalementFormData | null> {
+    const modal = await modalController.create({
+      component: SignalementFormModal,
     });
+
+    await modal.present();
+
+    const { data, role } = await modal.onDidDismiss();
+
+    if (role === 'cancel' || !data) {
+      return null;
+    }
+
+    return data as SignalementFormData;
   },
 
   /**

@@ -3,6 +3,7 @@ import {
   addDoc,
   doc,
   getDocs,
+  updateDoc,
   query,
   where,
   orderBy,
@@ -38,7 +39,7 @@ export class SignalementService {
           ? data.createdAt
           : Timestamp.fromDate(data.createdAt),
         updatedAt: serverTimestamp(),
-        photoUrls: [],
+        photoUrls: data.photoUrls || [],
         priority: 3
       };
 
@@ -51,6 +52,20 @@ export class SignalementService {
       return docRef.id;
     } catch (error) {
       console.error('Erreur lors de la création du signalement:', error);
+      throw error;
+    }
+  }
+
+  async updateSignalementPhotos(signalementId: string, photoUrls: string[]): Promise<void> {
+    try {
+      const docRef = doc(db, this.collectionName, signalementId);
+      await updateDoc(docRef, {
+        photoUrls,
+        updatedAt: serverTimestamp()
+      });
+      console.log('Photos mises à jour pour le signalement:', signalementId);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des photos:', error);
       throw error;
     }
   }

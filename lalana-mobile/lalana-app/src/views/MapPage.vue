@@ -156,15 +156,13 @@ async function createSignalementAtCurrentLocation() {
 
   const { lat, lng } = userLocation.value;
   
-  // Ajouter marqueur temporaire
   addTempMarker(lat, lng);
 
-  // Afficher le formulaire
   const formData = await alertService.showSignalementForm();
 
   if (formData) {
     try {
-      await createSignalement(lat, lng, formData.description, formData.localisation || '');
+      await createSignalement(lat, lng, formData.description, formData.localisation || '', formData.photos || []);
       await alertService.showSuccess('Signalement créé avec succès !');
     } catch (error) {
       await alertService.showError('Impossible de créer le signalement. Vérifiez votre connexion.');
@@ -176,23 +174,18 @@ async function createSignalementAtCurrentLocation() {
 
 async function handleMapClick(lat: number, lng: number) {
   if (!isCreatingSignalement.value) return;
-
-  // Ajouter marqueur temporaire
   addTempMarker(lat, lng);
-
-  // Afficher le formulaire
   const formData = await alertService.showSignalementForm();
 
   if (formData) {
-    try {
-      await createSignalement(lat, lng, formData.description, formData.localisation || '');
+    try {      
+      await createSignalement(lat, lng, formData.description, formData.localisation || '', formData.photos || []);
       await alertService.showSuccess('Signalement créé avec succès !');
     } catch (error) {
       await alertService.showError('Impossible de créer le signalement. Vérifiez votre connexion.');
     }
   }
 
-  // Cleanup
   removeTempMarker();
   isCreatingSignalement.value = false;
 }
