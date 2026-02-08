@@ -22,10 +22,12 @@ export const signin = async (email, password) => {
  * Inscription utilisateur
  */
 export const signup = async (email, password) => {
+  const body = { email, password };
+  console.log("Signup body:", body); // Debug log
   const response = await fetch(`${API_BASE_URL}/auth/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(body),
   });
   const data = await response.json();
   if (!response.ok) {
