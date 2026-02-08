@@ -78,7 +78,7 @@ export function useSignalements() {
         try {
           const photoUrls = await uploadSignalementPhotos(photos, id);
           if (photoUrls.length > 0) {
-            await signalementService.updateSignalementPhotos(id, photoUrls);
+            await signalementAddService.updateSignalementPhotos(id, photoUrls);
             console.log(`${photoUrls.length} photo(s) uploadée(s) sur Cloudinary`);
           }
         } catch (photoError) {

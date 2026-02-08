@@ -36,10 +36,20 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import javax.annotation.PostConstruct;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.io.InputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 import sun.misc.Signal;
 
@@ -64,6 +74,19 @@ public class SignalementService {
     private final ProblemeHistoryRepository problemeHistoryRepository;
     private final ProblemeStatusRepository problemeStatusRepository;
     private final EntrepriseRepository entrepriseRepository;
+
+    @Value("${uploads.base-dir:uploads}")
+    private String uploadsBaseDir;
+
+    @PostConstruct
+    public void initUploadsBaseDir() {
+        try {
+            Path p = Paths.get(uploadsBaseDir).toAbsolutePath();
+            System.out.println("INFO: uploads.base-dir configured = " + uploadsBaseDir + " -> " + p);
+        } catch (Exception e) {
+            System.out.println("WARN: Impossible de résoudre uploads.base-dir '" + uploadsBaseDir + "': " + e.getMessage());
+        }
+    }
 
     public List<Signalement> getAll() {
         try {
@@ -115,7 +138,7 @@ public class SignalementService {
                     if (dto != null)
                         result.add(dto);
                 } catch (Exception ex) {
-                    logger.warn("Impossible de mapper doc {}: {}", doc.getId(), ex.getMessage());
+                    System.out.println("WARN: Impossible de mapper doc " + doc.getId() + ": " + ex.getMessage());
                 }
             }
         } catch (Exception e) {
@@ -132,14 +155,38 @@ public class SignalementService {
         SignalementDto.SignalementDtoBuilder b = SignalementDto.builder();
         // description
         b.description(asString(doc.get("description")));
-        // createdAt
-        Timestamp ts = doc.getTimestamp("createdAt");
-        if (ts == null)
-            ts = doc.getTimestamp("createdAt");
-        b.createdAt(LocalDateTime.now());
-        if (ts != null) {
-            b.createdAt(ts.toDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+        // createdAt: handle multiple possible Firestore representations (Timestamp, String, Number)
+        Object createdObj = doc.get("createdAt");
+        LocalDateTime createdAt = LocalDateTime.now();
+        if (createdObj != null) {
+            try {
+                if (createdObj instanceof Timestamp) {
+                    Timestamp ts = (Timestamp) createdObj;
+                    createdAt = ts.toDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
+                } else if (createdObj instanceof String) {
+                    String s = (String) createdObj;
+                    try {
+                        createdAt = LocalDateTime.parse(s);
+                    } catch (Exception e1) {
+                        try {
+                            Instant inst = Instant.parse(s);
+                            createdAt = LocalDateTime.ofInstant(inst, java.time.ZoneId.systemDefault());
+                        } catch (Exception e2) {
+                            System.out.println("WARN: Impossible de parser createdAt string pour doc " + doc.getId() + ": " + s);
+                        }
+                    }
+                } else if (createdObj instanceof Number) {
+                    long v = ((Number) createdObj).longValue();
+                    Instant inst = v > 1000000000000L ? Instant.ofEpochMilli(v) : Instant.ofEpochSecond(v);
+                    createdAt = LocalDateTime.ofInstant(inst, java.time.ZoneId.systemDefault());
+                } else {
+                    System.out.println("WARN: createdAt type non géré pour doc " + doc.getId() + ": " + createdObj.getClass().getName());
+                }
+            } catch (Exception e) {
+                System.out.println("WARN: Erreur lors du parsing de createdAt pour doc " + doc.getId() + ": " + e.getMessage());
+            }
         }
+        b.createdAt(createdAt);
         // value de status cree
         b.valeur(10);
         // coordinates
@@ -164,21 +211,32 @@ public class SignalementService {
         }
         if (doc.get("userToken") != null) {
             b.userToken(asString(doc.get("userToken")));
+        } else if (doc.get("userId") != null) {
+            // Firestore may store Firebase UID in userId (string). Use it as userToken
+            String uid = asString(doc.get("userId"));
+            if (uid != null) b.userToken(uid);
         }
 
-        // extract images array if present: expected format is a list of maps with keys
-        // "online_path" and "file_name"
+        // statusLibelle if provided
+        if (doc.get("statusLibelle") != null) {
+            b.statusLibelle(asString(doc.get("statusLibelle")));
+        }
+
         SignalementDto dto = b.build();
         try {
-            Object imagesObj = doc.get("images");
-            if (imagesObj instanceof java.util.List) {
-                java.util.List imgs = (java.util.List) imagesObj;
-                java.util.List<com.projet.lalana.dto.SignalementImageDTO> imageDtos = new java.util.ArrayList<>();
-                for (Object o : imgs) {
-                    if (o instanceof java.util.Map) {
-                        java.util.Map map = (java.util.Map) o;
-                        String online = asString(map.get("online_path"));
-                        String fileName = asString(map.get("file_name"));
+            java.util.List<com.projet.lalana.dto.SignalementImageDTO> imageDtos = new java.util.ArrayList<>();
+            Object photoUrlsObj = doc.get("photoUrls");
+            if (photoUrlsObj instanceof java.util.List) {
+                java.util.List urls = (java.util.List) photoUrlsObj;
+                for (Object u : urls) {
+                    String online = asString(u);
+                    if (online != null) {
+                        String fileName = null;
+                        try {
+                            String path = new java.net.URL(online).getPath();
+                            fileName = Paths.get(path).getFileName().toString();
+                        } catch (Exception e) {
+                        }
                         SignalementImageDTO imgDto = new SignalementImageDTO();
                         imgDto.setCheminOnline(online);
                         imgDto.setNomFichier(fileName);
@@ -186,10 +244,41 @@ public class SignalementService {
                         imageDtos.add(imgDto);
                     }
                 }
-                dto.setImages(imageDtos);
+            } else {
+                // fallback to legacy 'images' field
+                Object imagesObj = doc.get("images");
+                if (imagesObj instanceof java.util.List) {
+                    java.util.List imgs = (java.util.List) imagesObj;
+                    for (Object o : imgs) {
+                        if (o instanceof java.util.Map) {
+                            java.util.Map map = (java.util.Map) o;
+                            String online = asString(map.get("online_path"));
+                            String fileName = asString(map.get("file_name"));
+                            SignalementImageDTO imgDto = new SignalementImageDTO();
+                            imgDto.setCheminOnline(online);
+                            imgDto.setNomFichier(fileName);
+                            imgDto.setCheminLocal(null);
+                            imageDtos.add(imgDto);
+                        } else if (o instanceof String) {
+                            String online = asString(o);
+                            String fileName = null;
+                            try {
+                                String path = new java.net.URL(online).getPath();
+                                fileName = Paths.get(path).getFileName().toString();
+                            } catch (Exception e) {}
+                            SignalementImageDTO imgDto = new SignalementImageDTO();
+                            imgDto.setCheminOnline(online);
+                            imgDto.setNomFichier(fileName);
+                            imgDto.setCheminLocal(null);
+                            imageDtos.add(imgDto);
+                        }
+                    }
+                }
             }
+
+            if (!imageDtos.isEmpty()) dto.setImages(imageDtos);
         } catch (Exception exImg) {
-            logger.warn("Impossible d'extraire les images du document Firestore {}: {}", doc.getId(), exImg.getMessage());
+            System.out.println("WARN: Impossible d'extraire les images du document Firestore " + doc.getId() + ": " + exImg.getMessage());
         }
 
         return dto;
@@ -282,28 +371,71 @@ public class SignalementService {
                     Signalement saved = signalementRepository.save(s);
                     signalementHistoryRepository.save(history);
 
-                    // Persist images associated to this signalement (if any)
-                    try {
-                        if (dto.getImages() != null) {
-                            for (SignalementImageDTO imgDto : dto.getImages()) {
+                    // Persist images associated to this signalement (if any).
+                    // Download remote images (cheminOnline) into local folder ./uploads/signalement.
+                    if (dto.getImages() != null) {
+                        for (SignalementImageDTO imgDto : dto.getImages()) {
+                            SignalementImage img = new SignalementImage();
+                            img.setSignalement(saved);
+                            String online = imgDto.getCheminOnline();
+                            String localPath = imgDto.getCheminLocal();
+                            String fileName = imgDto.getNomFichier();
+
+                            if (online != null && !online.isBlank()) {
                                 try {
-                                    SignalementImage img = new SignalementImage();
-                                    img.setSignalement(saved);
-                                    img.setCheminLocal(imgDto.getCheminLocal());
-                                    img.setCheminOnline(imgDto.getCheminOnline());
-                                    img.setNomFichier(imgDto.getNomFichier());
+                                    Path uploadsDir = Paths.get(uploadsBaseDir, "signalement");
+                                    System.out.println("INFO: Preparing to download image for signalement " + saved.getId() + " from " + online);
+                                    System.out.println("INFO: uploads.base-dir = " + uploadsBaseDir + ", uploads dir (before create): " + uploadsDir.toAbsolutePath());
+                                    Files.createDirectories(uploadsDir);
+                                    System.out.println("INFO: uploads dir (after create): " + uploadsDir.toAbsolutePath());
+
+                                    URL url = new URL(online);
+
+                                    String remoteName = fileName;
+                                    if (remoteName == null || remoteName.isBlank()) {
+                                        String path = url.getPath();
+                                        remoteName = Paths.get(path).getFileName().toString();
+                                    }
+
+                                    String safeName = saved.getId() + "_" + System.currentTimeMillis() + "_" + remoteName;
+                                    Path dest = uploadsDir.resolve(safeName);
+                                    System.out.println("INFO: will save image to " + dest.toAbsolutePath());
+
+                                    try (InputStream in = url.openStream()) {
+                                        Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
+                                    }
+
+                                    localPath = dest.toString();
+                                    img.setCheminLocal(localPath);
+                                    img.setCheminOnline(online);
+                                    img.setNomFichier(remoteName);
+                                    signalementImageRepository.save(img);
+                                } catch (IOException ioEx) {
+                                    System.out.println("ERROR: IOException while downloading image " + online + " for signalement " + saved.getId() + ": " + ioEx.getMessage());
+                                    ioEx.printStackTrace();
+                                    // preserve previous behavior: throw ServiceException to signal offline/network error
+                                    throw new ServiceException("Impossible de télécharger l'image depuis le remote (hors connexion?) : " + online, ioEx);
+                                } catch (Exception exImg) {
+                                    System.out.println("WARN: Impossible de sauvegarder l'image pour signalement " + saved.getId() + ": " + exImg.getMessage());
+                                    exImg.printStackTrace();
+                                }
+                            } else {
+                                // No remote URL; save the record using provided local path if any
+                                try {
+                                    img.setCheminLocal(localPath);
+                                    img.setCheminOnline(online);
+                                    img.setNomFichier(fileName);
                                     signalementImageRepository.save(img);
                                 } catch (Exception imgEx) {
-                                    logger.warn("Impossible de sauvegarder l'image pour signalement {}: {}", saved.getId(), imgEx.getMessage());
+                                    System.out.println("WARN: Impossible de sauvegarder l'image locale pour signalement " + saved.getId() + ": " + imgEx.getMessage());
                                 }
                             }
                         }
-                    } catch (Exception exImgAll) {
-                        logger.warn("Erreur lors de la sauvegarde des images du signalement: {}", exImgAll.getMessage());
                     }
 
                     imported++;
                 } catch (Exception inner) {
+                    inner.printStackTrace();
                     logger.error("Erreur import DTO (description={}): {}", dto.getDescription(), inner.getMessage(),
                             inner);
                 }
@@ -317,7 +449,7 @@ public class SignalementService {
                     try {
                         firestoreService.deleteDocument("signalementAdd", doc.getId());
                     } catch (Exception exDel) {
-                        logger.warn("Impossible de supprimer doc Firestore {}: {}", doc.getId(), exDel.getMessage());
+                        System.out.println("WARN: Impossible de supprimer doc Firestore " + doc.getId() + ": " + exDel.getMessage());
                         throw exDel;
                     }
                 }

@@ -1,7 +1,9 @@
 import { 
   collection, 
   addDoc, 
-  getDocs, 
+  getDocs,
+  updateDoc, 
+    doc,
   query, 
   where, 
   orderBy,
@@ -21,42 +23,59 @@ import type { SignalementRequest, Signalement } from '@/types/firestore';
 export class SignalementAddService {
   private collectionName = 'signalementAdd';
 
-  async createSignalement(data: SignalementRequest): Promise<string> {
-    try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        throw new Error('Utilisateur non connecté');
+  
+    async createSignalement(data: SignalementRequest): Promise<string> {
+      try {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          throw new Error('Utilisateur non connecté');
+        }
+
+        const signalementData = {
+          id: null,
+          userId: data.userId,
+          userEmail: currentUser.email || '',
+          x: data.x,
+          y: data.y,
+          localisation: data.localisation || '',
+          description: data.description || '',
+          statusLibelle: data.statusLibelle || 'En attente',
+          createdAt: typeof data.createdAt === 'string'
+            ? data.createdAt
+            : Timestamp.fromDate(data.createdAt),
+          updatedAt: serverTimestamp(),
+          photoUrls: data.photoUrls || [],
+          priority: 3
+        };
+
+        const docRef = await addDoc(
+          collection(db, this.collectionName),
+          signalementData
+        );
+
+        console.log('Signalement créé avec ID:', docRef.id);
+        return docRef.id;
+      } catch (error) {
+        console.error('Erreur lors de la création du signalement:', error);
+        throw error;
       }
-
-      const signalementData = {
-        id: null,
-        userId: data.userId,
-        userEmail: currentUser.email || '',
-        x: data.x,
-        y: data.y,
-        localisation: data.localisation || '',
-        description: data.description || '',
-        statusLibelle: data.statusLibelle || 'En attente',
-        createdAt: typeof data.createdAt === 'string' 
-          ? data.createdAt 
-          : Timestamp.fromDate(data.createdAt),
-        updatedAt: serverTimestamp(),
-        photoUrls: [],
-        priority: 3 
-      };
-
-      const docRef = await addDoc(
-        collection(db, this.collectionName), 
-        signalementData
-      );
-
-      console.log('Signalement ajouté avec ID:', docRef.id);
-      return docRef.id;
-    } catch (error) {
-      console.error('Erreur lors de la création du signalement (signalementAdd):', error);
-      throw error;
     }
-  }
+
+    async updateSignalementPhotos(signalementId: string, photoUrls: string[]): Promise<void> {
+      try {
+        const docRef = doc(db, this.collectionName, signalementId);
+        await updateDoc(docRef, {
+          photoUrls,
+          updatedAt: serverTimestamp()
+        });
+        console.log('Photos mises à jour pour le signalement:', signalementId);
+      } catch (error) {
+        console.error('Erreur lors de la mise à jour des photos:', error);
+        throw error;
+      }
+    }
+
+
 
   async getUserSignalements(): Promise<Signalement[]> {
     try {
