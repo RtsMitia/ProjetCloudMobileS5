@@ -226,6 +226,7 @@ function MapOffLine() {
                 zoom={13}
                 selectedProblemId={selectedProblemId}
                 problems={probleme}
+                selectedSignalementId={selectedSignalementId}
                 signals={signalement}
               />
 

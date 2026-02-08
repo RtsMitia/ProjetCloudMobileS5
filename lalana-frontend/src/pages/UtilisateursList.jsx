@@ -9,6 +9,7 @@ import {
   FunnelIcon,
   CloudArrowUpIcon,
   CloudArrowDownIcon,
+  ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import { fetchUsers, deblockUser } from "../api/userService";
 
@@ -229,10 +230,20 @@ export default function UtilisateursList() {
     <div>
       <div className="sm:flex sm:items-center mb-8">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-bold text-gray-900">Utilisateurs</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Gestion de tous les utilisateurs de la plateforme ({utilisateursFiltres.length} sur {utilisateurs.length})
-          </p>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/backoffice"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Utilisateurs</h1>
+              <p className="mt-2 text-sm text-gray-700">
+                Gestion de tous les utilisateurs de la plateforme ({utilisateursFiltres.length} sur {utilisateurs.length})
+              </p>
+            </div>
+          </div>
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none space-x-3">
           {/* Bouton Créer un utilisateur */}

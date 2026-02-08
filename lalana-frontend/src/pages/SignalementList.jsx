@@ -14,6 +14,7 @@ import {
   DocumentTextIcon,
   CheckCircleIcon,
   ArrowPathIcon,
+  ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import {
   fetchSignalements as fetchSignalementsAPI,
@@ -228,10 +229,20 @@ export default function SignalementsList() {
     <div>
       <div className="sm:flex sm:items-center mb-8">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-bold text-gray-900">Signalements</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Liste de tous les signalements reçus par les citoyens ({signalementsFiltres.length} sur {signalements.length})
-          </p>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/backoffice"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Signalements</h1>
+              <p className="mt-2 text-sm text-gray-700">
+                Liste de tous les signalements reçus par les citoyens ({signalementsFiltres.length} sur {signalements.length})
+              </p>
+            </div>
+          </div>
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
           <div className="relative">

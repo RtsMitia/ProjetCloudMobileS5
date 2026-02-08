@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useMap } from "react-leaflet";
 
-function MapController({ center, zoom, selectedProblemId, problems }) {
+function MapController({ center, zoom, selectedProblemId, problems, selectedSignalementId, signals }) {
   const map = useMap();
   
   useEffect(() => {
@@ -13,13 +13,21 @@ function MapController({ center, zoom, selectedProblemId, problems }) {
           easeLinearity: 0.25,
         });
       }
+    } else if (selectedSignalementId) {
+      const sig = signals.find(s => s.id === selectedSignalementId);
+      if (sig) {
+        map.flyTo([sig.y, sig.x], 16, {
+          duration: 1.5,
+          easeLinearity: 0.25,
+        });
+      }
     } else if (center) {
       map.flyTo(center, zoom, {
         duration: 1,
         easeLinearity: 0.25,
       });
     }
-  }, [selectedProblemId, center, zoom, map, problems]);
+  }, [selectedProblemId, selectedSignalementId, center, zoom, map, problems, signals]);
 
   return null;
 }

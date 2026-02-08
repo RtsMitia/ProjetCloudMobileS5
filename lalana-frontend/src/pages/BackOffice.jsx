@@ -9,6 +9,7 @@ import {
   ChartBarIcon,
   DocumentChartBarIcon,
   ArrowPathIcon,
+  ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { syncGlobal } from "../api/entrepriseService";
@@ -85,8 +86,19 @@ export default function BackOffice() {
             </p>
           </div>
 
-          {/* Bouton de synchronisation */}
-          <div className="relative">
+          {/* Boutons d'action */}
+          <div className="flex items-center gap-3">
+            {/* Bouton de retour vers l'accueil */}
+            <Link
+              to="/"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 shadow-md hover:shadow-lg"
+            >
+              <ArrowLeftIcon className="h-5 w-5" />
+              Accueil
+            </Link>
+
+            {/* Bouton de synchronisation */}
+            <div className="relative">
             <button
               onClick={handleSync}
               disabled={isSyncing}
@@ -113,7 +125,7 @@ export default function BackOffice() {
               {isSyncing ? "Synchronisation..." : "Synchroniser"}
             </button>
 
-            {/* Message de statut */}
+              {/* Message de statut */}
             {syncStatus && (
               <div
                 className={`
@@ -132,6 +144,7 @@ export default function BackOffice() {
                 {syncStatus.message}
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>
