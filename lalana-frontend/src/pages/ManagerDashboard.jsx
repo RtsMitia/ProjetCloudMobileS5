@@ -17,42 +17,8 @@ export default function ManagerDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
-  const [useTestData, setUseTestData] = useState(true);
 
-  // Test response for development (precomputed stats + sample items)
-    // Test response for development (backend-style precomputed stats + sample items)
-    const getTestResponse = () => {
-      const samples = [
-        { id: 1, entrepriseName: "Construction Plus", statusValeur: 30, localisation: "Avenue de l'Indépendance, Antananarivo", dateNouveauStatus: "2026-01-15T08:30:00", dateEnCoursStatus: "2026-01-17T10:00:00", dateTermineStatus: "2026-01-25T16:30:00" },
-        { id: 2, entrepriseName: "Travaux Experts", statusValeur: 20, localisation: "Route de Tamatave, Toamasina", dateNouveauStatus: "2026-01-20T09:15:00", dateEnCoursStatus: "2026-01-22T14:20:00", dateTermineStatus: null },
-        { id: 3, entrepriseName: null, statusValeur: 10, localisation: "Boulevard de France, Fianarantsoa", dateNouveauStatus: "2026-01-28T11:00:00", dateEnCoursStatus: null, dateTermineStatus: null },
-        { id: 4, entrepriseName: "Construction Plus", statusValeur: 30, localisation: "Rue de la République, Mahajanga", dateNouveauStatus: "2026-01-10T07:45:00", dateEnCoursStatus: "2026-01-12T09:30:00", dateTermineStatus: "2026-01-20T15:00:00" },
-        { id: 5, entrepriseName: "Réparations Rapides", statusValeur: 20, localisation: "Avenue de la Libération, Antsirabe", dateNouveauStatus: "2026-01-25T10:20:00", dateEnCoursStatus: "2026-01-27T13:45:00", dateTermineStatus: null },
-        { id: 6, entrepriseName: "Travaux Experts", statusValeur: 30, localisation: "Route Nationale 7, Tuléar", dateNouveauStatus: "2026-01-12T08:00:00", dateEnCoursStatus: "2026-01-15T11:30:00", dateTermineStatus: "2026-01-28T17:00:00" },
-        { id: 7, entrepriseName: null, statusValeur: 10, localisation: "Avenue du 26 Juin, Antsiranana", dateNouveauStatus: "2026-01-30T09:30:00", dateEnCoursStatus: null, dateTermineStatus: null },
-        { id: 8, entrepriseName: "Construction Plus", statusValeur: 20, localisation: "Boulevard Joffre, Antananarivo", dateNouveauStatus: "2026-01-22T08:45:00", dateEnCoursStatus: "2026-01-24T10:15:00", dateTermineStatus: null },
-        { id: 9, entrepriseName: "Réparations Rapides", statusValeur: 30, localisation: "Rue Poincaré, Morondava", dateNouveauStatus: "2026-01-08T07:30:00", dateEnCoursStatus: "2026-01-10T09:00:00", dateTermineStatus: "2026-01-18T14:30:00" },
-        { id: 10, entrepriseName: "Travaux Experts", statusValeur: 20, localisation: "Avenue de Madagascar, Nosy Be", dateNouveauStatus: "2026-01-26T10:00:00", dateEnCoursStatus: "2026-01-29T12:30:00", dateTermineStatus: null },
-      ];
-
-      // Precomputed stats (backend-style) — hardcoded for test purposes
-      const response = {
-        success: true,
-        data: {
-          counts: { nouveau: 2, enCours: 4, termine: 4, total: 10 },
-          averages: {
-            nouveauToEnCours: 2.0,
-            enCoursToTermine: 6.5,
-            totalNouveauToTermine: 8.5,
-          },
-          minMax: { min: 1, max: 18 },
-          histogram: [],
-          samples,
-        },
-      };
-
-      return response;
-    };
+    
 
   // Format API data to match our UI structure when backend provides full response
   const formatProblemeData = (apiData) => {
@@ -77,41 +43,26 @@ export default function ManagerDashboard() {
     });
   };
 
-  // Fetch data from API or use test data
+  // Fetch data from API
+  const fetchData = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = await fetchManagerStats();
+      setStats(data);
+      setSamples(data.samples || []);
+    } catch (err) {
+      console.error("Erreur lors du chargement des données:", err);
+      setError(err.message || String(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProblemes = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      if (useTestData) {
-        // Simulate API delay and return the full response (counts, averages, samples)
-        setTimeout(() => {
-          const resp = getTestResponse();
-          setStats(resp.data);
-          setSamples(resp.data.samples || []);
-          setIsLoading(false);
-        }, 500);
-        return;
-      }
-
-      try {
-        const data = await fetchManagerStats();
-        setStats(data);
-        setSamples(data.samples || []);
-      } catch (error) {
-        console.error("Erreur lors du chargement des données:", error);
-        setError(error.message);
-        const resp = getTestResponse();
-        setStats(resp.data);
-        setSamples(resp.data.samples || []);
-        setUseTestData(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProblemes();
-  }, [useTestData]);
+    fetchData();
+  }, []);
 
   // Filter samples by status
   const filteredProblemes = samples.filter((p) => {
@@ -120,17 +71,7 @@ export default function ManagerDashboard() {
   });
 
   const handleRefresh = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      if (useTestData) {
-        setProblemes(getTestData());
-      }
-      setIsLoading(false);
-    }, 500);
-  };
-
-  const toggleDataSource = () => {
-    setUseTestData(!useTestData);
+    fetchData();
   };
 
   return (
@@ -220,11 +161,10 @@ export default function ManagerDashboard() {
           </div>
 
           {/* Error message */}
-          {error && !useTestData && (
+          {error && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-700">
-                <span className="font-medium">Erreur:</span> {error}. Utilisation
-                des données de test.
+                <span className="font-medium">Erreur:</span> {error}
               </p>
             </div>
           )}
