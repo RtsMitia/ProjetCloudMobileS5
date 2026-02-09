@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.NoSuchElementException;
+
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +63,8 @@ public class ProblemeService {
                             "[DEBUG] Status en cours introuvable (VALEUR=" + PROCESSING_STATUS_VALUE + ")"));
 
             probleme.setProblemeStatus(processingStatus);
+            probleme.setFirestoreSynced(false); 
+
             Probleme saved = problemeRepository.save(probleme);
 
             ProblemeHistory history = new ProblemeHistory();
@@ -90,6 +93,7 @@ public class ProblemeService {
                             "[DEBUG] Status résolu introuvable (VALEUR=" + RESOLVED_STATUS_VALUE + ")"));
 
             probleme.setProblemeStatus(resolvedStatus);
+            probleme.setFirestoreSynced(false); 
             Probleme saved = problemeRepository.save(probleme);
 
             ProblemeHistory history = new ProblemeHistory();

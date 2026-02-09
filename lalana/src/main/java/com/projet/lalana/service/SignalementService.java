@@ -42,6 +42,7 @@ import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.time.Instant;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.io.InputStream;
 import java.io.IOException;
@@ -112,14 +113,16 @@ public class SignalementService {
 
         SignalementHistory signalementHistory = new SignalementHistory();
         SignalementStatus status = statusSignalementRepository.findById(2)
-                .orElseThrow(() -> new ServiceException("Statut 'En attente de technicien' non trouvé"));
+        .orElseThrow(() -> new ServiceException("Statut 'En attente de technicien' non trouvé"));
         signalementHistory.setSignalement(signalement);
         signalementHistory.setStatus(status);
-
         signalementHistory.setChangedAt(java.time.LocalDateTime.now());
-        signalementHistoryRepository.save(signalementHistory);
+        
         logger.info("Technicien envoyé pour le signalement id={}", signalementId);
         signalement.setStatus(status);
+        signalement.setFirestoreSynced(false);
+        
+        signalementHistoryRepository.save(signalementHistory);
         signalementRepository.save(signalement);
         return signalement;
     }
@@ -187,15 +190,20 @@ public class SignalementService {
             }
         }
         b.createdAt(createdAt);
+
         // value de status cree
         b.valeur(10);
         // coordinates
         Double x = asDouble(doc.get("x"));
         if (x == null)
             x = asDouble(doc.get("lat"));
+        if (x == null) 
+            x = 0.0;
         Double y = asDouble(doc.get("y"));
         if (y == null)
             y = asDouble(doc.get("lon"));
+        if (y == null)
+            y = 0.0;
         b.x(x).y(y);
 
         // localisation
@@ -204,11 +212,6 @@ public class SignalementService {
             localisation = asString(doc.get("localisation"));
         b.localisation(localisation);
         // user
-        if (doc.get("userId") != null) {
-            Double uid = asDouble(doc.get("userId"));
-            if (uid != null)
-                b.userId(uid.intValue());
-        }
         if (doc.get("userToken") != null) {
             b.userToken(asString(doc.get("userToken")));
         } else if (doc.get("userId") != null) {
@@ -224,10 +227,10 @@ public class SignalementService {
 
         SignalementDto dto = b.build();
         try {
-            java.util.List<com.projet.lalana.dto.SignalementImageDTO> imageDtos = new java.util.ArrayList<>();
+            List<SignalementImageDTO> imageDtos = new ArrayList<>();
             Object photoUrlsObj = doc.get("photoUrls");
-            if (photoUrlsObj instanceof java.util.List) {
-                java.util.List urls = (java.util.List) photoUrlsObj;
+            if (photoUrlsObj instanceof List) {
+                List urls = (List) photoUrlsObj;
                 for (Object u : urls) {
                     String online = asString(u);
                     if (online != null) {
@@ -244,37 +247,38 @@ public class SignalementService {
                         imageDtos.add(imgDto);
                     }
                 }
-            } else {
-                // fallback to legacy 'images' field
-                Object imagesObj = doc.get("images");
-                if (imagesObj instanceof java.util.List) {
-                    java.util.List imgs = (java.util.List) imagesObj;
-                    for (Object o : imgs) {
-                        if (o instanceof java.util.Map) {
-                            java.util.Map map = (java.util.Map) o;
-                            String online = asString(map.get("online_path"));
-                            String fileName = asString(map.get("file_name"));
-                            SignalementImageDTO imgDto = new SignalementImageDTO();
-                            imgDto.setCheminOnline(online);
-                            imgDto.setNomFichier(fileName);
-                            imgDto.setCheminLocal(null);
-                            imageDtos.add(imgDto);
-                        } else if (o instanceof String) {
-                            String online = asString(o);
-                            String fileName = null;
-                            try {
-                                String path = new java.net.URL(online).getPath();
-                                fileName = Paths.get(path).getFileName().toString();
-                            } catch (Exception e) {}
-                            SignalementImageDTO imgDto = new SignalementImageDTO();
-                            imgDto.setCheminOnline(online);
-                            imgDto.setNomFichier(fileName);
-                            imgDto.setCheminLocal(null);
-                            imageDtos.add(imgDto);
-                        }
-                    }
-                }
-            }
+            } 
+            // else {
+            //     // fallback to legacy 'images' field
+            //     Object imagesObj = doc.get("images");
+            //     if (imagesObj instanceof java.util.List) {
+            //         java.util.List imgs = (java.util.List) imagesObj;
+            //         for (Object o : imgs) {
+            //             if (o instanceof java.util.Map) {
+            //                 java.util.Map map = (java.util.Map) o;
+            //                 String online = asString(map.get("online_path"));
+            //                 String fileName = asString(map.get("file_name"));
+            //                 SignalementImageDTO imgDto = new SignalementImageDTO();
+            //                 imgDto.setCheminOnline(online);
+            //                 imgDto.setNomFichier(fileName);
+            //                 imgDto.setCheminLocal(null);
+            //                 imageDtos.add(imgDto);
+            //             } else if (o instanceof String) {
+            //                 String online = asString(o);
+            //                 String fileName = null;
+            //                 try {
+            //                     String path = new java.net.URL(online).getPath();
+            //                     fileName = Paths.get(path).getFileName().toString();
+            //                 } catch (Exception e) {}
+            //                 SignalementImageDTO imgDto = new SignalementImageDTO();
+            //                 imgDto.setCheminOnline(online);
+            //                 imgDto.setNomFichier(fileName);
+            //                 imgDto.setCheminLocal(null);
+            //                 imageDtos.add(imgDto);
+            //             }
+            //         }
+            //     }
+            // }
 
             if (!imageDtos.isEmpty()) dto.setImages(imageDtos);
         } catch (Exception exImg) {
@@ -360,7 +364,7 @@ public class SignalementService {
                     // status
                     s.setStatus(status);
                     // firestoreSynced
-                    s.setFirestoreSynced(false);
+                    s.setFirestoreSynced(true);
 
                     SignalementHistory history = new SignalementHistory();
                     history.setSignalement(s);
@@ -376,7 +380,6 @@ public class SignalementService {
                     if (dto.getImages() != null) {
                         for (SignalementImageDTO imgDto : dto.getImages()) {
                             SignalementImage img = new SignalementImage();
-                            img.setSignalement(saved);
                             String online = imgDto.getCheminOnline();
                             String localPath = imgDto.getCheminLocal();
                             String fileName = imgDto.getNomFichier();
@@ -388,24 +391,25 @@ public class SignalementService {
                                     System.out.println("INFO: uploads.base-dir = " + uploadsBaseDir + ", uploads dir (before create): " + uploadsDir.toAbsolutePath());
                                     Files.createDirectories(uploadsDir);
                                     System.out.println("INFO: uploads dir (after create): " + uploadsDir.toAbsolutePath());
-
+                                    
                                     URL url = new URL(online);
-
+                                    
                                     String remoteName = fileName;
                                     if (remoteName == null || remoteName.isBlank()) {
                                         String path = url.getPath();
                                         remoteName = Paths.get(path).getFileName().toString();
                                     }
-
+                                    
                                     String safeName = saved.getId() + "_" + System.currentTimeMillis() + "_" + remoteName;
                                     Path dest = uploadsDir.resolve(safeName);
                                     System.out.println("INFO: will save image to " + dest.toAbsolutePath());
-
+                                    
                                     try (InputStream in = url.openStream()) {
                                         Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
                                     }
-
+                                    
                                     localPath = dest.toString();
+                                    img.setSignalement(saved);
                                     img.setCheminLocal(localPath);
                                     img.setCheminOnline(online);
                                     img.setNomFichier(remoteName);
@@ -422,6 +426,7 @@ public class SignalementService {
                             } else {
                                 // No remote URL; save the record using provided local path if any
                                 try {
+                                    img.setSignalement(saved);
                                     img.setCheminLocal(localPath);
                                     img.setCheminOnline(online);
                                     img.setNomFichier(fileName);
