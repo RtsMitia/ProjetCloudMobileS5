@@ -121,8 +121,8 @@ class NotificationService {
     }
 
     try {
+      // 1. Sauvegarder dans userTokens (utilisé par la Cloud Function)
       const tokenDocRef = doc(db, 'userTokens', user.uid);
-      
       await setDoc(tokenDocRef, {
         userId: user.uid,
         email: user.email,
@@ -132,7 +132,14 @@ class NotificationService {
         createdAt: serverTimestamp(),
       }, { merge: true });
 
-      console.log('Token FCM sauvegardé dans Firestore');
+      // 2. Mettre à jour le champ fcmToken dans users
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, {
+        fcmToken: token,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
+      console.log('Token FCM sauvegardé dans Firestore (users + userTokens)');
     } catch (error) {
       console.error('Erreur sauvegarde token:', error);
     }

@@ -6,6 +6,7 @@ import { Timestamp } from 'firebase/firestore';
 export interface User {
   email: string;
   role: number; // 0 = utilisateur, 1 = admin/manager
+  fcmToken?: string; // Token FCM pour les notifications push (optionnel)
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

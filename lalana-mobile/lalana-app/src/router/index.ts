@@ -5,6 +5,7 @@ import { auth } from "@/services/firebase/firebase";
 // Lazy loading des vues pour de meilleures performances
 const Login = () => import("@/views/LoginRefactored.vue");
 const MapPage = () => import("@/views/MapPage.vue");
+const NotificationHistoryPage = () => import("@/views/NotificationHistoryPage.vue");
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -22,6 +23,12 @@ const routes: Array<RouteRecordRaw> = [
     name: "Map",
     component: MapPage,
     meta: { requiresAuth: false } // Accessible en mode visiteur
+  },
+  {
+    path: "/notifications",
+    name: "NotificationHistory",
+    component: NotificationHistoryPage,
+    meta: { requiresAuth: true }
   }
 ];
 
@@ -34,8 +41,13 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const currentUser = auth.currentUser;
   const requiresGuest = to.matched.some(record => record.meta.requiresGuest);
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
 
-  if (requiresGuest && currentUser) {
+  if (requiresAuth && !currentUser) {
+    // Route protégée mais utilisateur non connecté
+    next('/login');
+  } else if (requiresGuest && currentUser) {
+    // Page de connexion mais utilisateur déjà connecté
     next('/map');
   } else {
     next();
