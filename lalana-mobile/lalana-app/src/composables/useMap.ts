@@ -347,13 +347,26 @@ export function useMap(containerId: string = 'map') {
         break;
     }
 
-    // Prepare images payload: use signalement.images when available, otherwise provide dummy test images
-    const imagesPayload = (signalement as any).images && (signalement as any).images.length
-      ? JSON.stringify((signalement as any).images.map((i: any) => ({ cheminOnline: i.cheminOnline || i.online_path || i.file_name || i.fileName || i.url, cheminLocal: i.cheminLocal || null, nomFichier: i.nomFichier || i.file_name || i.fileName || 'image' })))
-      : JSON.stringify([
-          { cheminOnline: 'https://placekitten.com/800/600', nomFichier: 'kitten-1.jpg' },
-          { cheminOnline: 'https://placekitten.com/801/600', nomFichier: 'kitten-2.jpg' }
-        ]);
+
+    let imagesPayload: string;
+    const photoUrls = signalement.photoUrls;
+    const legacyImages = (signalement as any).images;
+
+    if (photoUrls && photoUrls.length > 0) {
+      imagesPayload = JSON.stringify(photoUrls.map((url: string, idx: number) => ({
+        cheminOnline: url,
+        cheminLocal: null,
+        nomFichier: `photo-${idx + 1}.jpg`
+      })));
+    } else if (legacyImages && legacyImages.length > 0) {
+      imagesPayload = JSON.stringify(legacyImages.map((i: any) => ({
+        cheminOnline: i.cheminOnline || i.online_path || i.url || '',
+        cheminLocal: i.cheminLocal || null,
+        nomFichier: i.nomFichier || i.file_name || i.fileName || 'image'
+      })));
+    } else {
+      imagesPayload = '[]';
+    }
 
     return `
       <div style="min-width: 220px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
@@ -390,9 +403,9 @@ export function useMap(containerId: string = 'map') {
         <p style="margin: 8px 0 0 0; font-size: 11px; color: #9ca3af; font-style: italic;">
           📅 ${dateStr}
         </p>
-        <div style="margin-top:8px; text-align:center;">
+        ${imagesPayload !== '[]' ? `<div style="margin-top:8px; text-align:center;">
           <button onclick='window.dispatchEvent(new CustomEvent("show-signalement-images", { detail: { images: ${imagesPayload} }}))' style="background:#2563eb;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-weight:600;">Voir les images</button>
-        </div>
+        </div>` : ''}
       </div>
     `;
   }
