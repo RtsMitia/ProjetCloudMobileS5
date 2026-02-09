@@ -77,7 +77,7 @@ export class SignalementService {
   subscribeToSignalements(
     callback: (signalements: Signalement[]) => void
   ): () => void {
-   
+
     const listeCollectionRef = collection(db, this.collectionName);
 
     const addCollectionRef = collection(db, this.addCollectionName);
