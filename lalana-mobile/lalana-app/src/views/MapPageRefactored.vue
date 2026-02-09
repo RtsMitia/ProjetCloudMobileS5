@@ -38,6 +38,14 @@
         :show="isAuthenticated" 
         @click="handleAddSignalement" 
       />
+      
+      <!-- 🔔 Popup de notification (nouveau) -->
+      <NotificationPopup
+        :show="showPopup && isAuthenticated"
+        :notification="latestNotification"
+        @close="closePopup"
+        @click="handleNotificationClickWrapper"
+      />
     </ion-content>
   </ion-page>
 </template>
@@ -46,7 +54,9 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { IonPage, IonContent } from '@ionic/vue';
 import { MapHeader, MapFilters, MapLoader, AddSignalementButton, UserLocationButton } from '@/components/map';
+import NotificationPopup from '@/components/NotificationPopup.vue';
 import { useAuth, useSignalements, useMap } from '@/composables';
+import { useUserNotifications } from '@/composables/useUserNotifications';
 import { alertService } from '@/services/alert.service';
 
 // Composables
@@ -75,6 +85,16 @@ const {
   centerOnUserLocation
 } = useMap();
 
+// 🔔 Composable pour les notifications utilisateur
+const {
+  latestNotification,
+  showPopup,
+  subscribeToNotifications,
+  unsubscribeFromNotifications,
+  closePopup,
+  handleNotificationClick: onNotificationClick,
+} = useUserNotifications();
+
 // State local
 const showFilters = ref(false);
 const isCreatingSignalement = ref(false);
@@ -84,17 +104,32 @@ onMounted(() => {
   setTimeout(() => {
     initMap(handleMapClick);
     subscribeToSignalements();
+    
+    // 🔔 S'abonner aux notifications si connecté
+    if (isAuthenticated.value) {
+      subscribeToNotifications();
+    }
   }, 100);
 });
 
 onUnmounted(() => {
   unsubscribeFromSignalements();
+  unsubscribeFromNotifications();
   destroyMap();
 });
 
 // Watchers
 watch(filteredSignalements, (newSignalements) => {
   displaySignalements(newSignalements);
+});
+
+// 🔔 S'abonner/désabonner aux notifications selon l'état d'authentification
+watch(isAuthenticated, (authenticated) => {
+  if (authenticated) {
+    subscribeToNotifications();
+  } else {
+    unsubscribeFromNotifications();
+  }
 });
 
 // Handlers
@@ -177,6 +212,18 @@ async function handleMapClick(lat: number, lng: number) {
   // Cleanup
   removeTempMarker();
   isCreatingSignalement.value = false;
+}
+
+// 🔔 Handler pour le clic sur une notification
+async function handleNotificationClickWrapper(notification: any) {
+  const result = await onNotificationClick(notification);
+  
+  // Optionnel: Naviguer vers le signalement/problème concerné
+  if (result) {
+    console.log('Navigation vers:', result);
+    // TODO: Implémenter la navigation si nécessaire
+    // Par exemple, centrer la carte sur le signalement
+  }
 }
 </script>
 

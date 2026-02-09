@@ -34,6 +34,7 @@ public class SyncService {
     private final SignalementService signalementService;
     private final ProblemeService problemeService;
     private final UserService userService;
+    private final NotificationOutboxService notificationOutboxService;
 
     private static final Logger logger = LoggerFactory.getLogger(SyncService.class);
 
@@ -144,6 +145,27 @@ public class SyncService {
                 w.get();
                 markSignalementSynced(s.getId());
                 count++;
+                
+                // ✅ Principe: Notification UNIQUEMENT après commit réussi
+                // Enregistrer l'intention de notification dans notification_outbox
+                if (dto.getUserToken() != null && !dto.getUserToken().isEmpty() && 
+                    dto.getUserId() != null) {
+                    try {
+                        boolean notifWritten = notificationOutboxService.notifySignalementCreated(
+                            dto.getId(),
+                            String.valueOf(dto.getUserId()),
+                            dto.getUserToken(),
+                            dto.getDescription()
+                        );
+                        if (notifWritten) {
+                            logger.info("📧 Intention de notification enregistrée pour signalement id={}", dto.getId());
+                        }
+                    } catch (Exception notifError) {
+                        // On ne fait pas échouer la sync si la notification échoue
+                        logger.warn("⚠️ Impossible d'enregistrer la notification pour signalement id={}: {}", 
+                            dto.getId(), notifError.getMessage());
+                    }
+                }
             } catch (Exception e) {
                 System.out.println("Failed to sync signalement id=" + s.getId() + " : " + e.getMessage());
             }

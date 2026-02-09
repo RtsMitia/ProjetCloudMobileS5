@@ -1,6 +1,7 @@
 package com.projet.lalana.service;
 
 import com.projet.lalana.model.Probleme;
+import com.projet.lalana.model.User;
 import com.projet.lalana.repository.ProblemeRepository;
 import com.projet.lalana.repository.ProblemeStatusRepository;
 import com.projet.lalana.repository.ProblemeHistoryRepository;
@@ -32,6 +33,7 @@ public class ProblemeService {
     private final ProblemeRepository problemeRepository;
     private final ProblemeStatusRepository problemeStatusRepository;
     private final ProblemeHistoryRepository problemeHistoryRepository;
+    private final NotificationOutboxService notificationOutboxService;
 
     public List<Probleme> getAll() {
         try {
@@ -97,6 +99,36 @@ public class ProblemeService {
             history.setStatus(resolvedStatus);
             history.setChangedAt(LocalDateTime.now());
             problemeHistoryRepository.save(history);
+
+            // ✅ Principe: Notification UNIQUEMENT après commit réussi
+            // Enregistrer l'intention de notification pour informer l'utilisateur
+            if (saved.getSignalement() != null && 
+                saved.getSignalement().getUser() != null &&
+                saved.getSignalement().getUser().getId() != null &&
+                saved.getSignalement().getUser().getFirebaseToken() != null) {
+                try {
+                    User user = saved.getSignalement().getUser();
+                    String userId = String.valueOf(user.getId());
+                    String userToken = user.getFirebaseToken();
+                    String description = saved.getSignalement().getDescription() != null ? 
+                        saved.getSignalement().getDescription() : "Problème résolu";
+                    
+                    boolean notifWritten = notificationOutboxService.notifyProblemeResolved(
+                        saved.getId(),
+                        userId,
+                        userToken,
+                        description
+                    );
+                    
+                    if (notifWritten) {
+                        logger.info("📧 Intention de notification enregistrée pour problème résolu id={}", saved.getId());
+                    }
+                } catch (Exception notifError) {
+                    // On ne fait pas échouer la résolution si la notification échoue
+                    logger.warn("⚠️ Impossible d'enregistrer la notification pour problème id={}: {}", 
+                        saved.getId(), notifError.getMessage());
+                }
+            }
 
             return saved;
         } catch (ServiceException se) {
