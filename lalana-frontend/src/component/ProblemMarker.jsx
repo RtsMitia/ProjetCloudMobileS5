@@ -71,6 +71,12 @@ function ProblemMarker({
               <p className="text-xs text-gray-600">{problem.localisation}</p>
             </div>
             <p className="text-xs text-gray-500 line-clamp-2">{problem.description}</p>
+            {problem.niveau && (
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-medium text-gray-600">Niveau:</span>
+                <span className="text-xs font-semibold text-blue-600">{problem.niveau}/10</span>
+              </div>
+            )}
             <div className="flex justify-between items-center pt-1">
               <span className="text-xs text-gray-400">{problem.userEmail}</span>
               <StatusBadge statusValeur={problem.statusValeur} type="probleme" />

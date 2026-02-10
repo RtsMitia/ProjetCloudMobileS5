@@ -10,6 +10,7 @@ export const formatProblemeData = (item) => ({
   id: item.id,
   surface: item.surface || 0,
   budgetEstime: item.budgetEstime || 0,
+  niveau: item.niveau || 0,
   entrepriseId: item.entreprise?.id || null,
   entrepriseName: item.entreprise?.nom || null,
   entrepriseContact: item.entreprise?.telephone || null,
