@@ -34,6 +34,12 @@ function ProblemListItem({ problem, isSelected, onClick }) {
           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
           <span>Surface: {problem.surface} m²</span>
         </div>
+        {problem.niveau && (
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+            <span className="font-medium">Niveau: {problem.niveau}/10</span>
+          </div>
+        )}
         <div className="flex items-center gap-1">
           <CurrencyDollarIcon className="h-3 w-3" />
           <span>{formatCurrency(problem.budgetEstime)}</span>
