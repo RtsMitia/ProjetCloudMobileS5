@@ -13,6 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { fetchSignalementById, soumettreRapportTech } from "../api/signalementService";
 import { fetchEntreprises } from "../api/entrepriseService";
+import { fetchPM2Value } from "../api/configService";
 
 export default function RapportTech() {
   const { id } = useParams();
@@ -23,6 +24,8 @@ export default function RapportTech() {
   const [selectedEntreprise, setSelectedEntreprise] = useState("");
   const [surface, setSurface] = useState("");
   const [budgetEstime, setBudgetEstime] = useState("");
+  const [niveau, setNiveau] = useState("");
+  const [pm2Value, setPm2Value] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -58,18 +61,39 @@ export default function RapportTech() {
       }
     };
 
+    const loadPM2 = async () => {
+      try {
+        const value = await fetchPM2Value();
+        setPm2Value(value);
+      } catch (error) {
+        console.error("Erreur lors du chargement de la configuration PM2:", error);
+        alert("Impossible de charger la configuration PM2. Veuillez réessayer.");
+      }
+    };
+
     if (id) {
       loadSignalement();
       loadEntreprises();
+      loadPM2();
     }
   }, [id]);
+
+  // Auto-calculer le budget estimé quand surface ou niveau changent
+  useEffect(() => {
+    if (pm2Value && surface && niveau) {
+      const calculatedBudget = pm2Value * parseFloat(surface) * parseInt(niveau);
+      setBudgetEstime(calculatedBudget.toFixed(2));
+    } else {
+      setBudgetEstime("");
+    }
+  }, [pm2Value, surface, niveau]);
 
   // Fonction pour soumettre le formulaire
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validation
-    if (!selectedEntreprise || !surface || !budgetEstime) {
+    if (!selectedEntreprise || !surface || !budgetEstime || !niveau) {
       alert("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -91,6 +115,7 @@ export default function RapportTech() {
         signalementId: parseInt(id),
         surface: parseFloat(surface),
         budgetEstime: parseFloat(budgetEstime),
+        niveau: parseInt(niveau),
         entrepriseId: parseInt(selectedEntreprise)
       };
       
@@ -346,7 +371,34 @@ export default function RapportTech() {
                   </p>
                 </div>
 
-                {/* Budget estimé */}
+                {/* Niveau (1-10) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Square3Stack3DIcon className="h-5 w-5 text-blue-500 inline mr-2" />
+                    Niveau (1-10) *
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[...Array(10)].map((_, i) => {
+                      const val = i + 1;
+                      return (
+                        <label key={val} className={`inline-flex items-center px-2 py-1 border rounded-md cursor-pointer ${String(niveau) === String(val) ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}>
+                          <input
+                            type="radio"
+                            name="niveau"
+                            value={val}
+                            checked={String(niveau) === String(val)}
+                            onChange={(e) => setNiveau(e.target.value)}
+                            className="mr-2"
+                          />
+                          <span className="text-sm">{val}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-2 text-sm text-gray-500">Choisissez le niveau estimé (1 = faible, 10 = très élevé)</p>
+                </div>
+
+                {/* Budget estimé (calculé automatiquement) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <CurrencyDollarIcon className="h-5 w-5 text-blue-500 inline mr-2" />
@@ -357,22 +409,19 @@ export default function RapportTech() {
                       <span className="text-gray-500 sm:text-sm">MGA</span>
                     </div>
                     <input
-                      type="number"
-                      step="100"
-                      min="0"
-                      value={budgetEstime}
-                      onChange={(e) => setBudgetEstime(e.target.value)}
-                      className="block w-full pl-16 pr-4 py-2 border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      placeholder="0"
-                      required
+                      type="text"
+                      value={budgetEstime ? formatCurrency(parseFloat(budgetEstime)) : "0 MGA"}
+                      className="block w-full pl-16 pr-4 py-2 border-gray-300 rounded-md bg-gray-50 text-gray-700 cursor-not-allowed sm:text-sm"
+                      disabled
+                      readOnly
                     />
                   </div>
                   <p className="mt-2 text-sm text-gray-500">
-                    Coût estimé des travaux
+                    Calculé automatiquement: PM2 ({pm2Value || '...'}) × Niveau × Surface
                   </p>
                   {budgetEstime && (
                     <p className="mt-1 text-sm font-medium text-emerald-600">
-                      {formatCurrency(parseFloat(budgetEstime) || 0)}
+                      Formule: {pm2Value} × {niveau} × {surface} = {formatCurrency(parseFloat(budgetEstime))}
                     </p>
                   )}
                 </div>
@@ -445,11 +494,21 @@ export default function RapportTech() {
                   </div>
                 )}
 
+                {niveau && (
+                  <div className="p-3 bg-purple-50 rounded-md">
+                    <p className="text-sm font-medium text-gray-900">Niveau sélectionné</p>
+                    <p className="text-lg font-semibold text-gray-700">{niveau}</p>
+                  </div>
+                )}
+
                 {budgetEstime && (
                   <div className="p-3 bg-emerald-50 rounded-md">
-                    <p className="text-sm font-medium text-gray-900">Budget estimé</p>
+                    <p className="text-sm font-medium text-gray-900">Budget estimé (calculé)</p>
                     <p className="text-lg font-semibold text-gray-700">
                       {formatCurrency(parseFloat(budgetEstime) || 0)}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {pm2Value} × {niveau} × {surface}
                     </p>
                   </div>
                 )}
@@ -462,6 +521,7 @@ export default function RapportTech() {
                       {JSON.stringify({
                         signalementId: parseInt(id),
                         surface: surface ? parseFloat(surface) : null,
+                        niveau: niveau ? parseInt(niveau) : null,
                         budgetEstime: budgetEstime ? parseFloat(budgetEstime) : null,
                         entrepriseId: selectedEntreprise ? parseInt(selectedEntreprise) : null
                       }, null, 2)}

@@ -10,4 +10,5 @@ public class RapportTech {
     private Double surface;
     private Double budgetEstime;
     private Integer entrepriseId;
+    private Integer niveau;
 }

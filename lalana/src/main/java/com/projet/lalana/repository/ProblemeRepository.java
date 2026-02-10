@@ -21,10 +21,10 @@ public interface ProblemeRepository extends JpaRepository<Probleme, Integer> {
     List<Probleme> findByFirestoreSyncedFalse();
     
     @Query("""
-        SELECT p FROM Probleme p
+        SELECT DISTINCT p FROM Probleme p
         JOIN FETCH p.signalement s
-        JOIN FETCH s.images i
-        WHERE p.problemeStatus.valeur !=30 
+        LEFT JOIN FETCH s.images i
+        WHERE p.problemeStatus.valeur != 30 
         """)
     List<Probleme> findAllWithStatusOther();
 

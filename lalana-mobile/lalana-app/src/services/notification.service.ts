@@ -1,190 +1,173 @@
-import { 
-  PushNotifications, 
-  Token, 
-  PushNotificationSchema, 
-  ActionPerformed,
-  PermissionStatus
-} from '@capacitor/push-notifications';
-import { Capacitor, PluginListenerHandle } from '@capacitor/core';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db, auth } from './firebase/firebase';
+import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
+import { doc, setDoc, getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
-type NotificationPermission = 'granted' | 'denied' | 'prompt';
-
+/**
+ * Service de gestion des notifications push pour mobile
+ * Utilise Capacitor Push Notifications pour Android/iOS
+ */
 class NotificationService {
+  private db = getFirestore();
+  private auth = getAuth();
   private isInitialized = false;
-  private currentToken: string | null = null;
 
-  isSupported(): boolean {
-    return Capacitor.isNativePlatform();
-  }
-
-  getToken(): string | null {
-    return this.currentToken;
-  }
-
-  private mapPermission(status: PermissionStatus): NotificationPermission {
-    const state = status.receive;
-    if (state === 'granted') return 'granted';
-    if (state === 'denied') return 'denied';
-    return 'prompt';
-  }
-
-  async initialize(): Promise<boolean> {
+  /**
+   * Initialise le service de notifications
+   * À appeler APRÈS le login de l'utilisateur
+   */
+  async initialize(): Promise<void> {
     if (this.isInitialized) {
-      return true;
-    }
-
-    if (!this.isSupported()) {
-      console.log('Notifications non supportées sur cette plateforme');
-      return false;
-    }
-
-    try {
-      const permission = await this.requestPermission();
-      
-      if (permission !== 'granted') {
-        console.warn('Permission notifications refusée');
-        return false;
-      }
-
-      this.registerListeners();
-      await PushNotifications.register();
-
-      this.isInitialized = true;
-      console.log('Notifications push initialisées');
-      return true;
-    } catch (error) {
-      console.error('Erreur initialisation notifications:', error);
-      return false;
-    }
-  }
-
-  async requestPermission(): Promise<NotificationPermission> {
-    if (!this.isSupported()) {
-      return 'denied';
-    }
-
-    const result = await PushNotifications.requestPermissions();
-    return this.mapPermission(result);
-  }
-
-  async checkPermission(): Promise<NotificationPermission> {
-    if (!this.isSupported()) {
-      return 'denied';
-    }
-
-    const result = await PushNotifications.checkPermissions();
-    return this.mapPermission(result);
-  }
-
-  async addPushReceivedListener(
-    callback: (notification: PushNotificationSchema) => void
-  ): Promise<PluginListenerHandle> {
-    return PushNotifications.addListener('pushNotificationReceived', callback);
-  }
-
-  private registerListeners(): void {
-    PushNotifications.addListener('registration', async (token: Token) => {
-      console.log('Token FCM reçu:', token.value);
-      this.currentToken = token.value;
-      await this.saveTokenToFirestore(token.value);
-    });
-
-    PushNotifications.addListener('registrationError', (error) => {
-      console.error('Erreur enregistrement push:', error);
-    });
-
-    PushNotifications.addListener(
-      'pushNotificationReceived',
-      (notification: PushNotificationSchema) => {
-        console.log('Notification reçue (foreground):', notification);
-        this.handleForegroundNotification(notification);
-      }
-    );
-
-    PushNotifications.addListener(
-      'pushNotificationActionPerformed',
-      (action: ActionPerformed) => {
-        console.log('Action notification:', action);
-        this.handleNotificationAction(action);
-      }
-    );
-  }
-
-  async saveTokenToFirestore(token: string): Promise<void> {
-    const user = auth.currentUser;
-    
-    if (!user) {
-      console.warn('Utilisateur non connecté, token non sauvegardé');
+      console.log('NotificationService déjà initialisé');
       return;
     }
 
     try {
-      // 1. Sauvegarder dans userTokens (utilisé par la Cloud Function)
-      const tokenDocRef = doc(db, 'userTokens', user.uid);
-      await setDoc(tokenDocRef, {
-        userId: user.uid,
-        email: user.email,
-        fcmToken: token,
-        platform: Capacitor.getPlatform(),
-        updatedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
-      }, { merge: true });
+      // Vérifier et demander les permissions
+      const permStatus = await PushNotifications.checkPermissions();
 
-      // 2. Mettre à jour le champ fcmToken dans users
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, {
-        fcmToken: token,
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
+      if (permStatus.receive === 'prompt') {
+        const result = await PushNotifications.requestPermissions();
+        if (result.receive !== 'granted') {
+          console.warn('Permission de notifications refusée');
+          return;
+        }
+      }
 
-      console.log('Token FCM sauvegardé dans Firestore (users + userTokens)');
+      if (permStatus.receive !== 'granted') {
+        console.warn('Permission de notifications non accordée');
+        return;
+      }
+
+      // Enregistrer les listeners MAINTENANT que l'utilisateur est connecté à Firebase
+      this.registerListeners();
+
+      // Enregistrer pour les notifications push
+      await PushNotifications.register();
+
+      // Attendre que le token soit reçu via l'événement 'registration'
+      await this.waitForToken(5000); // Attendre 5 secondes max
+
+      this.isInitialized = true;
+      console.log('NotificationService initialisé avec succès');
     } catch (error) {
-      console.error('Erreur sauvegarde token:', error);
+      console.error('Erreur lors de l\'initialisation des notifications:', error);
     }
   }
 
-  private handleForegroundNotification(notification: PushNotificationSchema): void {
-    const event = new CustomEvent('push-notification', {
-      detail: {
-        title: notification.title,
-        body: notification.body,
-        data: notification.data,
-      }
+  /**
+   * Attend que le token soit reçu via l'événement 'registration'
+   */
+  private waitForToken(timeoutMs: number): Promise<void> {
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        console.warn(`Token non reçu après ${timeoutMs}ms`);
+        resolve();
+      }, timeoutMs);
     });
-    window.dispatchEvent(event);
   }
 
+  /**
+   * Enregistre les différents listeners pour les événements de notifications
+   */
+  private registerListeners(): void {
+    // Listener pour l'enregistrement réussi et récupération du token
+    PushNotifications.addListener('registration', async (token: Token) => {
+      console.log('✅ Token FCM reçu via événement registration:', token.value);
+      // Sauvegarder dans Firestore
+      await this.saveTokenToFirestore(token.value);
+    });
+
+    // Listener pour les erreurs d'enregistrement
+    PushNotifications.addListener('registrationError', (error: any) => {
+      console.error('Erreur d\'enregistrement FCM:', error);
+    });
+
+    // Listener pour les notifications reçues (app au premier plan)
+    PushNotifications.addListener(
+      'pushNotificationReceived',
+      (notification: PushNotificationSchema) => {
+        console.log('Notification reçue (foreground):', notification);
+        this.handleNotificationReceived(notification);
+      }
+    );
+
+    // Listener pour les actions sur les notifications (tap sur la notification)
+    PushNotifications.addListener(
+      'pushNotificationActionPerformed',
+      (notification: ActionPerformed) => {
+        console.log('Action sur notification:', notification);
+        this.handleNotificationAction(notification);
+      }
+    );
+  }
+
+  /**
+   * Sauvegarde le token FCM dans Firestore pour l'utilisateur connecté
+   */
+  private async saveTokenToFirestore(token: string): Promise<void> {
+    try {
+      const currentUser = this.auth.currentUser;
+
+      if (!currentUser) {
+        console.warn('Aucun utilisateur connecté, token non sauvegardé');
+        return;
+      }
+
+      await setDoc(
+        doc(this.db, 'userTokens', currentUser.uid),
+        {
+          fcmToken: token,
+          userId: currentUser.uid,
+          platform: 'mobile',
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
+
+      console.log('Token FCM sauvegardé dans Firestore pour l\'utilisateur:', currentUser.uid);
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du token:', error);
+    }
+  }
+
+  /**
+   * Gère la réception d'une notification (app au premier plan)
+   */
+  private handleNotificationReceived(notification: PushNotificationSchema): void {
+    console.log('Titre:', notification.title);
+    console.log('Corps:', notification.body);
+    console.log('Données:', notification.data);
+  }
+
+  /**
+   * Gère l'action de l'utilisateur sur une notification
+   */
   private handleNotificationAction(action: ActionPerformed): void {
-    const data = action.notification.data;
-    
-    const event = new CustomEvent('push-notification-action', {
-      detail: {
-        actionId: action.actionId,
-        data: data,
-      }
-    });
-    window.dispatchEvent(event);
-    if (data?.signalementId) {
-      console.log('Navigation vers signalement:', data.signalementId);
+    const notification = action.notification;
+
+    console.log('Action ID:', action.actionId);
+    console.log('Données de notification:', notification.data);
+
+    if (notification.data?.reportId) {
+      console.log('Navigation vers le signalement:', notification.data.reportId);
     }
   }
 
-  async removeAllListeners(): Promise<void> {
-    await PushNotifications.removeAllListeners();
-    this.isInitialized = false;
+  /**
+   * Obtient la liste des notifications livrées mais non ouvertes
+   */
+  async getDeliveredNotifications(): Promise<PushNotificationSchema[]> {
+    const result = await PushNotifications.getDeliveredNotifications();
+    return result.notifications;
   }
 
-  async getDeliveredNotifications() {
-    if (!this.isSupported()) return { notifications: [] };
-    return await PushNotifications.getDeliveredNotifications();
-  }
-
+  /**
+   * Supprime toutes les notifications livrées
+   */
   async removeAllDeliveredNotifications(): Promise<void> {
-    if (!this.isSupported()) return;
     await PushNotifications.removeAllDeliveredNotifications();
   }
 }
 
+// Export d'une instance singleton
 export const notificationService = new NotificationService();

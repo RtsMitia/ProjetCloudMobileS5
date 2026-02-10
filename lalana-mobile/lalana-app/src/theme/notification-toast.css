@@ -1,0 +1,96 @@
+/**
+ * Styles personnalisés pour les toasts de notification
+ */
+
+/* Toast de notification - Style général */
+.notification-toast {
+    --border-radius: 12px;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --max-width: 90%;
+    --min-height: 80px;
+}
+
+/* En-tête du toast */
+.notification-toast::part(header) {
+    font-weight: 600;
+    font-size: 15px;
+    padding-bottom: 4px;
+}
+
+/* Message du toast */
+.notification-toast::part(message) {
+    font-size: 14px;
+    opacity: 0.9;
+    line-height: 1.4;
+}
+
+/* Boutons du toast */
+.notification-toast::part(button) {
+    font-weight: 500;
+    text-transform: none;
+}
+
+/* Animation d'entrée */
+@keyframes slideInDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.notification-toast {
+    animation: slideInDown 0.3s ease-out;
+}
+
+/* Styles spécifiques par type de notification */
+
+/* Notification de succès (RESOLVED) */
+ion-toast.notification-toast[color="success"] {
+    --background: var(--ion-color-success);
+    --color: var(--ion-color-success-contrast);
+}
+
+/* Notification primaire (CREATED) */
+ion-toast.notification-toast[color="primary"] {
+    --background: var(--ion-color-primary);
+    --color: var(--ion-color-primary-contrast);
+}
+
+/* Notification d'avertissement (STATUS_CHANGED) */
+ion-toast.notification-toast[color="warning"] {
+    --background: var(--ion-color-warning);
+    --color: var(--ion-color-warning-contrast);
+}
+
+/* Icône du toast */
+.notification-toast ion-icon {
+    font-size: 24px;
+    margin-right: 8px;
+}
+
+/* Responsive - Ajustement pour mobile */
+@media (max-width: 576px) {
+    .notification-toast {
+        --max-width: 95%;
+    }
+
+    .notification-toast::part(header) {
+        font-size: 14px;
+    }
+
+    .notification-toast::part(message) {
+        font-size: 13px;
+    }
+}
+
+/* Mode sombre */
+@media (prefers-color-scheme: dark) {
+    .notification-toast {
+        --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+}

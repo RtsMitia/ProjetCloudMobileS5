@@ -16,6 +16,7 @@ import com.projet.lalana.repository.SignalementStatusRepository;
 import com.projet.lalana.repository.ProblemeHistoryRepository;
 import com.projet.lalana.repository.ProblemeRepository;
 import com.projet.lalana.repository.ProblemeStatusRepository;
+import com.projet.lalana.repository.ConfigRepository;
 
 import com.projet.lalana.dto.RapportTech;
 import com.projet.lalana.dto.SignalementImageDTO;
@@ -75,6 +76,7 @@ public class SignalementService {
     private final ProblemeHistoryRepository problemeHistoryRepository;
     private final ProblemeStatusRepository problemeStatusRepository;
     private final EntrepriseRepository entrepriseRepository;
+    private final ConfigRepository configRepository;
 
     @Value("${uploads.base-dir:uploads}")
     private String uploadsBaseDir;
@@ -490,13 +492,37 @@ public class SignalementService {
                     .orElseThrow(() -> new ServiceException("Statut 'En cours de traitement' non trouvé"));
             
 
+            // Fetch PM2 configuration and compute expected budget
+            com.projet.lalana.model.Config pm2Config = configRepository.findByKey("PM2")
+                    .orElseThrow(() -> new ServiceException("Config PM2 non trouvée"));
+            double pm2Value;
+            try {
+                String val = pm2Config.getValeur();
+                if (val == null) throw new NumberFormatException("valeur PM2 est nulle");
+                pm2Value = Double.parseDouble(val.replace(',', '.'));
+            } catch (Exception ex) {
+                logger.error("Valeur PM2 invalide: {}", pm2Config.getValeur(), ex);
+                throw new ServiceException("Valeur PM2 invalide: " + pm2Config.getValeur(), ex);
+            }
+
             //create probleme
             probleme = new Probleme();
             probleme.setSignalement(signalement);
             probleme.setSurface(rapportTech.getSurface());
-            probleme.setBudgetEstime(rapportTech.getBudgetEstime());
+            // calculate expected budget = PM2 * niveau * surface
+            double surface = rapportTech.getSurface() != null ? rapportTech.getSurface() : 0.0;
+            int niveau = rapportTech.getNiveau() != null ? rapportTech.getNiveau() : 0;
+            double expectedBudget = pm2Value * niveau * surface;
+            Double providedBudget = rapportTech.getBudgetEstime();
+            if (providedBudget == null || Math.abs(providedBudget - expectedBudget) > 0.01) {
+                logger.info("Budget estimé fourni ({}) ne correspond pas au calcul ({}). Correction appliquée.", providedBudget, expectedBudget);
+                probleme.setBudgetEstime(expectedBudget);
+            } else {
+                probleme.setBudgetEstime(providedBudget);
+            }
             probleme.setEntreprise(entreprise);
             probleme.setProblemeStatus(status);
+            probleme.setNiveau(rapportTech.getNiveau());
             probleme.setFirestoreSynced(false);
             // Update signalement status to resolved
             signalement.setStatus(signalementStatus);

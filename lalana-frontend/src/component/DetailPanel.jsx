@@ -156,6 +156,19 @@ function DetailPanel({ type, data, onClose }) {
               </div>
             </div>
 
+            {/* Niveau */}
+            {data.niveau && (
+              <div className="p-3 bg-purple-50 rounded-lg border border-purple-100">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="h-3.5 w-3.5 flex items-center justify-center">
+                    <span className="text-xs font-bold text-purple-500">N</span>
+                  </div>
+                  <p className="text-xs font-medium text-purple-600">Niveau de gravité</p>
+                </div>
+                <p className="text-lg font-bold text-purple-800">{data.niveau}/10</p>
+              </div>
+            )}
+
             {/* Signalement associé */}
             {data.signalementId && (
               <div className="p-3 bg-rose-50 rounded-lg border border-rose-100">

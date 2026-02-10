@@ -38,7 +38,7 @@ public class SyncService {
     private final SignalementService signalementService;
     private final ProblemeService problemeService;
     private final UserService userService;
-    private final NotificationOutboxService notificationOutboxService;
+    private final FcmNotificationService fcmNotificationService;
 
     private static final Logger logger = LoggerFactory.getLogger(SyncService.class);
 
@@ -112,7 +112,7 @@ public class SyncService {
         int delProb = deleteProblemesValeur30();
         result.put("deleted_signalements", delSig);
         result.put("deleted_problemes", delProb);
-        
+
         // 6) snapshots
         try {
             result.put("all_signalements", signalementService.getAll());
@@ -127,7 +127,9 @@ public class SyncService {
     }
 
     public int syncSignalements() {
+        System.out.println("🚀 [SYNC] Démarrage de la synchronisation des signalements...");
         List<Signalement> rows = signalementRepository.findByStatusValeurLE10();
+        System.out.println("📊 [SYNC] Nombre de signalements à synchroniser: " + rows.size());
         int count = 0;
         Firestore db = FirestoreClient.getFirestore();
 
@@ -137,7 +139,7 @@ public class SyncService {
             Map<String, Object> doc = new HashMap<>();
             doc.put("id", dto.getId());
             doc.put("userId", dto.getUserId());
-            doc.put("userToken" , dto.getUserToken());  
+            doc.put("userToken", dto.getUserToken());
             doc.put("x", dto.getX());
             doc.put("y", dto.getY());
             doc.put("localisation", dto.getLocalisation());
@@ -168,27 +170,62 @@ public class SyncService {
                 markSignalementSynced(s.getId());
                 count++;
 
-                if (dto.getUserToken() != null && !dto.getUserToken().isEmpty() && 
-                    dto.getUserId() != null) {
+                // ✅ S'assurer que le document userTokens existe dans Firestore pour cet
+                // utilisateur
+                if (dto.getUserToken() != null && !dto.getUserToken().isEmpty() && dto.getUserId() != null) {
                     try {
-                        boolean notifWritten = notificationOutboxService.notifySignalementCreated(
-                            dto.getId(),
-                            String.valueOf(dto.getUserId()),
-                            dto.getUserToken(),
-                            dto.getDescription()
-                        );
-                        if (notifWritten) {
-                            logger.info("📧 Intention de notification enregistrée pour signalement id={}", dto.getId());
+                        fcmNotificationService.ensureUserTokenDocExists(
+                                dto.getUserToken(),
+                                null,
+                                dto.getUserId());
+                    } catch (Exception e) {
+                        System.out.println("⚠️ [SYNC] Erreur lors de la création du userToken doc: " + e.getMessage());
+                    }
+                }
+
+                // ✅ Envoi direct de notification FCM après sync réussie
+                System.out.println("🔍 [SYNC] Vérification notification pour signalement id=" + dto.getId()
+                        + ", userId=" + dto.getUserId() + ", token=" +
+                        (dto.getUserToken() != null
+                                ? dto.getUserToken().substring(0, Math.min(20, dto.getUserToken().length())) + "..."
+                                : "null"));
+
+                if (dto.getUserToken() != null && !dto.getUserToken().isEmpty() &&
+                        dto.getUserId() != null) {
+                    System.out.println(
+                            "✅ [SYNC] Conditions remplies, appel du service FCM pour signalement id=" + dto.getId());
+                    try {
+                        boolean notifSent = fcmNotificationService.sendSignalementCreatedNotification(
+                                dto.getId(),
+                                String.valueOf(dto.getUserId()),
+                                dto.getUserToken(),
+                                dto.getDescription());
+                        if (notifSent) {
+                            System.out.println("📧 [SYNC] Notification FCM envoyée avec succès pour signalement id="
+                                    + dto.getId());
+                        } else {
+                            System.out.println(
+                                    "⚠️ [SYNC] Échec envoi notification FCM pour signalement id=" + dto.getId());
                         }
                     } catch (Exception notifError) {
                         logger.warn("⚠️ Impossible d'enregistrer la notification pour signalement id={}: {}", 
                             dto.getId(), notifError.getMessage());
+                        // On ne fait pas échouer la sync si la notification échoue
+                        System.out.println("❌ [SYNC] Exception lors de l'envoi de notification pour signalement id="
+                                + dto.getId() + ": " + notifError.getMessage());
+                        notifError.printStackTrace();
                     }
+                } else {
+                    System.out.println("⚠️ [SYNC] Conditions non remplies pour notification: userId=" + dto.getUserId()
+                            + ", token présent=" +
+                            (dto.getUserToken() != null && !dto.getUserToken().isEmpty()));
                 }
             } catch (Exception e) {
-                System.out.println("Failed to sync signalement id=" + s.getId() + " : " + e.getMessage());
+                System.out.println("❌ [SYNC] Erreur sync signalement id=" + s.getId() + ": " + e.getMessage());
             }
         }
+        System.out.println("✅ [SYNC] Synchronisation terminée: " + count + " signalement(s) synchronisé(s) sur "
+                + rows.size() + " trouvé(s)");
         return count;
     }
 

@@ -37,6 +37,7 @@ public class SignalementDto {
         if (s == null) return null;
         SignalementDto.SignalementDtoBuilder b = SignalementDto.builder()
                 .id(s.getId())
+                .userId(s.getUser() != null ? s.getUser().getId() : null)
                 .userToken(s.getUser() != null ? s.getUser().getFirebaseToken() : null)
                 .description(s.getDescription())
                 .createdAt(s.getCreatedAt());

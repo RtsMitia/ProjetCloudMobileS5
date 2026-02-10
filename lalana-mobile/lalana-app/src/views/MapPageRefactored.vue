@@ -38,14 +38,6 @@
         :show="isAuthenticated" 
         @click="handleAddSignalement" 
       />
-      
-      <!-- 🔔 Popup de notification (nouveau) -->
-      <NotificationPopup
-        :show="showPopup && isAuthenticated"
-        :notification="latestNotification"
-        @close="closePopup"
-        @click="handleNotificationClickWrapper"
-      />
     </ion-content>
   </ion-page>
 </template>
@@ -54,7 +46,6 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { IonPage, IonContent } from '@ionic/vue';
 import { MapHeader, MapFilters, MapLoader, AddSignalementButton, UserLocationButton } from '@/components/map';
-import NotificationPopup from '@/components/NotificationPopup.vue';
 import { useAuth, useSignalements, useMap } from '@/composables';
 import { useUserNotifications } from '@/composables/useUserNotifications';
 import { alertService } from '@/services/alert.service';
@@ -85,14 +76,10 @@ const {
   centerOnUserLocation
 } = useMap();
 
-// 🔔 Composable pour les notifications utilisateur
+// 🔔 Composable pour les notifications utilisateur (affichage en toast)
 const {
-  latestNotification,
-  showPopup,
   subscribeToNotifications,
   unsubscribeFromNotifications,
-  closePopup,
-  handleNotificationClick: onNotificationClick,
 } = useUserNotifications();
 
 // State local
@@ -211,18 +198,6 @@ async function handleMapClick(lat: number, lng: number) {
   // Cleanup
   removeTempMarker();
   isCreatingSignalement.value = false;
-}
-
-// 🔔 Handler pour le clic sur une notification
-async function handleNotificationClickWrapper(notification: any) {
-  const result = await onNotificationClick(notification);
-  
-  // Optionnel: Naviguer vers le signalement/problème concerné
-  if (result) {
-    console.log('Navigation vers:', result);
-    // TODO: Implémenter la navigation si nécessaire
-    // Par exemple, centrer la carte sur le signalement
-  }
 }
 </script>
 

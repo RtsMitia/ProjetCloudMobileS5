@@ -15,7 +15,7 @@ public interface SignalementRepository extends JpaRepository<Signalement, Intege
 	@Query("SELECT s FROM Signalement s WHERE s.status.valeur = 30")
 	List<Signalement> findByStatusValeur30();
 
-	@Query("SELECT s FROM Signalement s JOIN FETCH s.images WHERE s.status.valeur != 30")
+	@Query("SELECT DISTINCT s FROM Signalement s LEFT JOIN FETCH s.images WHERE s.status.valeur != 30")
 	List<Signalement> findAllWithStatusOther();
 
 }
