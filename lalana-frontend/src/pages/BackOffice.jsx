@@ -48,6 +48,13 @@ export default function BackOffice() {
       color: "text-purple-600 bg-purple-50 border-purple-100",
       hoverColor: "hover:bg-purple-50 hover:border-purple-200",
     },
+    {
+      name: "Configuration",
+      path: "/backoffice/config",
+      icon: Cog6ToothIcon,
+      color: "text-purple-600 bg-purple-50 border-purple-100",
+      hoverColor: "hover:bg-purple-50 hover:border-purple-200",
+    },
   ];
 
   const handleSync = async () => {
