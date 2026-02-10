@@ -1,4 +1,5 @@
 import { cloudinaryConfig, getCloudinaryUploadUrl } from '@/config/cloudinary.config';
+import { Capacitor } from '@capacitor/core';
 
 export interface CloudinaryUploadResult {
   secure_url: string;
@@ -8,6 +9,21 @@ export interface CloudinaryUploadResult {
   height: number;
 }
 
+/**
+ * Convert a base64 data URI to a Blob for reliable FormData upload on native platforms.
+ */
+function base64ToBlob(dataUri: string): Blob {
+  const [header, base64] = dataUri.split(',');
+  const mimeMatch = header.match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+  const byteString = atob(base64);
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], { type: mime });
+}
 
 export async function uploadToCloudinary(
   base64Data: string,
@@ -15,8 +31,21 @@ export async function uploadToCloudinary(
 ): Promise<string> {
   const uploadUrl = getCloudinaryUploadUrl();
 
+  // Ensure data URI prefix
+  const dataUri = base64Data.startsWith('data:')
+    ? base64Data
+    : `data:image/jpeg;base64,${base64Data}`;
+
   const formData = new FormData();
-  formData.append('file', base64Data);
+
+  // On native platforms, convert to Blob for reliable FormData upload
+  if (Capacitor.isNativePlatform()) {
+    const blob = base64ToBlob(dataUri);
+    formData.append('file', blob, `${publicId}.jpeg`);
+  } else {
+    formData.append('file', dataUri);
+  }
+
   formData.append('upload_preset', cloudinaryConfig.uploadPreset);
   formData.append('folder', cloudinaryConfig.folder);
   formData.append('public_id', publicId);
