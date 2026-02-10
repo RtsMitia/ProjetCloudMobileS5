@@ -24,3 +24,20 @@ export const fetchPM2Value = async () => {
   }
   return value;
 };
+
+/**
+ * Mettre à jour une configuration
+ */
+export const updateConfig = async (key, valeur) => {
+  const response = await fetch(`${API_BASE_URL}/api/config/${key}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ valeur: valeur.toString() }),
+  });
+  if (!response.ok) throw new Error(`Erreur HTTP! Statut: ${response.status}`);
+  const data = await response.json();
+  if (data.success) {
+    return data.data;
+  }
+  throw new Error(data.message || "Erreur lors de la mise à jour");
+};
