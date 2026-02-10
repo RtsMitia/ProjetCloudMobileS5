@@ -6,6 +6,7 @@ import lombok.*;
 @Entity
 @Table(name = "config")
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 @ToString
 public class Config {
@@ -19,5 +20,5 @@ public class Config {
 
     @Column(nullable = false)
     private String valeur;
-    
+
 }
