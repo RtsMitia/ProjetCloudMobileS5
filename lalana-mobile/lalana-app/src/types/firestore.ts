@@ -109,6 +109,7 @@ export interface Probleme {
 export interface ProblemeRequest {
   id?: null;
   surface: number;
+  niveau : number;
   budgetEstime: number;
   entrepriseId?: number | null;
   entrepriseName?: string | null;

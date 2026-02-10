@@ -33,6 +33,7 @@ export class ProblemeService {
                 id: null,
                 surface: data.surface,
                 budgetEstime: data.budgetEstime,
+                niveau: data.niveau || 1,
                 entrepriseId: data.entrepriseId || null,
                 entrepriseName: data.entrepriseName || null,
                 entrepriseContact: data.entrepriseContact || null,

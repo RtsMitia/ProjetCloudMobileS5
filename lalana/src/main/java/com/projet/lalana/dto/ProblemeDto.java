@@ -8,6 +8,8 @@ import com.projet.lalana.model.Signalement;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -19,6 +21,11 @@ public class ProblemeDto {
     private Integer id;
     private Double surface;
     private Double budgetEstime;
+
+    @Min(1)
+    @Max(10)
+    private Integer niveau;
+
     private Integer entrepriseId;
     private String entrepriseName;
     private Integer statusId;
@@ -71,6 +78,9 @@ public class ProblemeDto {
             d.setDescription(s.getDescription());
             d.setCreatedAt(s.getCreatedAt());
         }
+
+        // Niveau de réparation / criticité
+        d.setNiveau(p.getNiveau());
 
         return d;
     }

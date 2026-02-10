@@ -145,9 +145,7 @@ public class SyncService {
                 w.get();
                 markSignalementSynced(s.getId());
                 count++;
-                
-                // ✅ Principe: Notification UNIQUEMENT après commit réussi
-                // Enregistrer l'intention de notification dans notification_outbox
+
                 if (dto.getUserToken() != null && !dto.getUserToken().isEmpty() && 
                     dto.getUserId() != null) {
                     try {
@@ -172,6 +170,9 @@ public class SyncService {
         }
         return count;
     }
+
+
+    
 
     public int deleteSignalementsValeur30() {
         int deleted = 0;

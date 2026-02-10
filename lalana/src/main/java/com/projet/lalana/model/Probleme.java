@@ -1,6 +1,8 @@
 package com.projet.lalana.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.*;
 
 @Entity
@@ -35,4 +37,9 @@ public class Probleme {
 
     @Column(name = "firestore_synced", nullable = false)
     private Boolean firestoreSynced = false;
+    
+    @Min(1)
+    @Max(10)
+    @Column(name = "niveau", nullable = false, columnDefinition = "INTEGER DEFAULT 1")
+    private Integer niveau = 1;
 }
