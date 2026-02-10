@@ -105,6 +105,7 @@ export interface Probleme {
   statusLibelle: string;
   createdAt?: Timestamp | string;
   updatedAt?: Timestamp | string;
+  photoUrls?: string[];
 }
 
 export interface ProblemeRequest {

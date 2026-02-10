@@ -349,7 +349,7 @@ public class SignalementService {
                     p.setX(x != null ? x : 0.0);
                     p.setY(y != null ? y : 0.0);
                     p.setLocalisation(dto.getLocalisation() != null ? dto.getLocalisation() : "");
-                    p.setFirestoreSynced(true);
+                    p.setFirestoreSynced(false);
                     pointRepository.save(p);
                     s.setPoint(p);
                     // description
@@ -364,7 +364,7 @@ public class SignalementService {
                     // status
                     s.setStatus(status);
                     // firestoreSynced
-                    s.setFirestoreSynced(true);
+                    s.setFirestoreSynced(false);
 
                     SignalementHistory history = new SignalementHistory();
                     history.setSignalement(s);

@@ -1,9 +1,12 @@
 package com.projet.lalana.dto;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.projet.lalana.model.Probleme;
 import com.projet.lalana.model.Signalement;
+import com.projet.lalana.model.SignalementImage;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -44,6 +47,7 @@ public class ProblemeDto {
     private String description;
     private LocalDateTime createdAt;
     private String statusLibelle;
+    private List<SignalementImageDTO> images;
 
     public static ProblemeDto fromEntity(Probleme p) {
         if (p == null) return null;
@@ -77,9 +81,32 @@ public class ProblemeDto {
             }
             d.setDescription(s.getDescription());
             d.setCreatedAt(s.getCreatedAt());
+            
+            List<SignalementImageDTO> imageDtos = new ArrayList<>();
+            try {
+                System.out.println("ProblemeDto.fromEntity - Probleme ID: " + p.getId() + ", Signalement ID: " + s.getId());
+                if (s.getImages() != null) {
+                    System.out.println("ProblemeDto.fromEntity - Images collection is not null, size: " + s.getImages().size());
+                    for (SignalementImage img : s.getImages()) {
+                        System.out.println("ProblemeDto.fromEntity - Processing image: " + img.getNomFichier());
+                        SignalementImageDTO imgDto = new SignalementImageDTO();
+                        imgDto.setCheminLocal(img.getCheminLocal());
+                        imgDto.setCheminOnline(img.getCheminOnline());
+                        imgDto.setNomFichier(img.getNomFichier());
+                        imageDtos.add(imgDto);
+                    }
+                    System.out.println("ProblemeDto.fromEntity - Total images mapped: " + imageDtos.size());
+                } else {
+                    System.out.println("ProblemeDto.fromEntity - Images collection is NULL (lazy loading failed?)");
+                }
+            } catch (Exception e) {
+                System.err.println("ProblemeDto.fromEntity - ERROR loading images for signalement " + s.getId() + ": " + e.getClass().getName() + " - " + e.getMessage());
+                e.printStackTrace();
+            }
+            d.setImages(imageDtos);
+            System.out.println("ProblemeDto.fromEntity - Final DTO has " + (d.getImages() != null ? d.getImages().size() : 0) + " images");
         }
 
-        // Niveau de réparation / criticité
         d.setNiveau(p.getNiveau());
 
         return d;

@@ -525,6 +525,15 @@ export function useMap(containerId: string = 'map') {
     const surfaceText = probleme.surface ? `${probleme.surface.toFixed(2)} m²` : '';
     const budgetText = probleme.budgetEstime ? `${probleme.budgetEstime.toLocaleString('fr-FR')} Ar` : '';
 
+    let imagesPayload = '[]';
+    if (probleme.photoUrls && probleme.photoUrls.length > 0) {
+      imagesPayload = JSON.stringify(probleme.photoUrls.map((url: string, idx: number) => ({
+        cheminOnline: url,
+        cheminLocal: null,
+        nomFichier: `photo-${idx + 1}.jpg`
+      })));
+    }
+
     return `
       <div style="min-width: 220px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
         <h3 style="margin: 0 0 12px 0; color: #1a1a1a; font-size: 16px; font-weight: 600; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px;">
@@ -572,6 +581,9 @@ export function useMap(containerId: string = 'map') {
         <p style="margin: 8px 0 0 0; font-size: 11px; color: #9ca3af; font-style: italic;">
           📅 ${dateStr}
         </p>
+        ${imagesPayload !== '[]' ? `<div style="margin-top:8px; text-align:center;">
+          <button onclick='window.dispatchEvent(new CustomEvent("show-signalement-images", { detail: { images: ${imagesPayload} }}))' style="background:#2563eb;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-weight:600;">Voir les images</button>
+        </div>` : ''}
       </div>
     `;
   }

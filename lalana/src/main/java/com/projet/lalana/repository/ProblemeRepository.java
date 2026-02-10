@@ -12,7 +12,9 @@ import org.springframework.data.jpa.repository.Query;
 public interface ProblemeRepository extends JpaRepository<Probleme, Integer> {
 
         @Query("""
-            SELECT p FROM Probleme p
+            SELECT DISTINCT p FROM Probleme p
+            LEFT JOIN FETCH p.signalement s
+            LEFT JOIN FETCH s.images
             WHERE p.problemeStatus.valeur <= :valeur
             """)
         List<Probleme> findByValeur(Integer valeur);
