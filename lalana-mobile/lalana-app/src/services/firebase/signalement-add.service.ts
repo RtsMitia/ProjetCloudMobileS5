@@ -39,7 +39,11 @@ export class SignalementAddService {
         localisation: data.localisation || '',
         description: data.description || '',
         statusLibelle: data.statusLibelle || 'En attente',
-        createdAt: data.createdAt, // Garde le format string ISO reçu depuis useSignalements
+        createdAt: typeof data.createdAt === 'string'
+          ? data.createdAt
+          : data.createdAt instanceof Date
+            ? Timestamp.fromDate(data.createdAt)
+            : data.createdAt,
         updatedAt: serverTimestamp(),
         photoUrls: data.photoUrls || [],
         priority: 3

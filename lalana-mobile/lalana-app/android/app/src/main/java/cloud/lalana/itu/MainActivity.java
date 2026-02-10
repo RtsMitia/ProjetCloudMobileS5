@@ -1,4 +1,4 @@
-package io.ionic.starter;
+package cloud.lalana.itu;
 
 import com.getcapacitor.BridgeActivity;
 
