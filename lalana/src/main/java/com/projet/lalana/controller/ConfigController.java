@@ -44,4 +44,48 @@ public class ConfigController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+    @PutMapping("/{key}")
+    public ResponseEntity<Map<String, Object>> updateConfigByKey(
+            @PathVariable String key,
+            @RequestBody Map<String, String> body) {
+        try {
+            String valeur = body.get("valeur");
+            if (valeur == null || valeur.trim().isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "La valeur est requise");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+            
+            Optional<Config> configOpt = configService.findByKey(key);
+            Config config;
+            boolean isCreated = false;
+            
+            if (configOpt.isEmpty()) {
+                config = new Config();
+                config.setKey(key);
+                config.setValeur(valeur);
+                isCreated = true;
+            } else {
+                config = configOpt.get();
+                config.setValeur(valeur);
+            }
+            
+            Config saved = configService.save(config);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", isCreated 
+                ? "Configuration créée avec succès" 
+                : "Configuration mise à jour avec succès");
+            response.put("data", saved);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Erreur lors de la mise à jour: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
 }
