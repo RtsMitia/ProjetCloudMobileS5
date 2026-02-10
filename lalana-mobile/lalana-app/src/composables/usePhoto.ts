@@ -175,7 +175,11 @@ export function usePhoto() {
             let base64Data: string;
             if (Capacitor.isNativePlatform()) {
                 const file = await Filesystem.readFile({ path: photo.path! });
-                base64Data = file.data as string;
+                const rawBase64 = file.data as string;
+                // Ensure data URI prefix for Cloudinary compatibility
+                base64Data = rawBase64.startsWith('data:')
+                    ? rawBase64
+                    : `data:image/jpeg;base64,${rawBase64}`;
             } else {
                 const response = await fetch(photo.webPath!);
                 const blob = await response.blob();
