@@ -35,8 +35,6 @@ public class Probleme {
     @JoinColumn(name = "status_id")
     private ProblemeStatus problemeStatus;
 
-    @JoinColumn(name = "niveau", nullable = false)
-    private Integer niveau;
 
     @Column(name = "firestore_synced", nullable = false)
     private Boolean firestoreSynced = false;
