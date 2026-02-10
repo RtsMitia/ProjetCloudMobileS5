@@ -42,7 +42,7 @@ export interface Signalement {
   localisation: string; // Adresse ou description
   description: string;
   statusLibelle: string; // Ex: "En attente", "En cours", "Résolu"
-  createdAt: Timestamp | string;
+  createdAt: Timestamp;
   updatedAt?: Timestamp;
   photoUrls?: string[];
   priority?: number;
@@ -56,7 +56,7 @@ export interface SignalementRequest {
   localisation: string;
   description: string;
   statusLibelle?: string;
-  createdAt: Date | string;
+  createdAt: Timestamp;
   photoUrls?: string[];
 }
 
@@ -102,8 +102,8 @@ export interface Probleme {
   localisation: string;
   description: string;
   statusLibelle: string;
-  createdAt?: Timestamp | string;
-  updatedAt?: Timestamp | string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface ProblemeRequest {
@@ -124,7 +124,7 @@ export interface ProblemeRequest {
   localisation: string;
   description: string;
   statusLibelle: string;
-  createdAt?: Date | string;
+  createdAt?: Timestamp;
 }
 
 /**

@@ -366,7 +366,7 @@ public class SignalementService {
                     // status
                     s.setStatus(status);
                     // firestoreSynced
-                    s.setFirestoreSynced(true);
+                    s.setFirestoreSynced(false);
 
                     SignalementHistory history = new SignalementHistory();
                     history.setSignalement(s);

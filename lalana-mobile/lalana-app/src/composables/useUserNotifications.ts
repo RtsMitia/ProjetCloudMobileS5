@@ -1,6 +1,7 @@
 import { ref, onUnmounted, Ref } from 'vue';
 import { collection, query, orderBy, limit, onSnapshot, updateDoc, doc, Unsubscribe } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase/firebase';
+import { toastController } from '@ionic/vue';
 
 export interface UserNotification {
   id: string;
@@ -33,7 +34,7 @@ export function useUserNotifications() {
   const unreadCount = ref(0);
   const latestNotification = ref<UserNotification | null>(null);
   const showPopup = ref(false);
-  
+
   let unsubscribe: Unsubscribe | null = null;
 
   /**
@@ -41,7 +42,7 @@ export function useUserNotifications() {
    */
   function subscribeToNotifications() {
     const user = auth.currentUser;
-    
+
     if (!user) {
       console.warn('Utilisateur non connecté, impossible de s\'abonner aux notifications');
       return;
@@ -58,7 +59,7 @@ export function useUserNotifications() {
       unsubscribe = onSnapshot(q, (snapshot) => {
         const newNotifications: UserNotification[] = [];
         let unreadCounter = 0;
-        
+
         snapshot.forEach((doc) => {
           const data = doc.data();
           const notification: UserNotification = {
@@ -75,9 +76,9 @@ export function useUserNotifications() {
             createdAt: data.createdAt,
             fcmMessageId: data.fcmMessageId,
           };
-          
+
           newNotifications.push(notification);
-          
+
           if (!notification.read) {
             unreadCounter++;
           }
@@ -101,18 +102,12 @@ export function useUserNotifications() {
               createdAt: data.createdAt,
               fcmMessageId: data.fcmMessageId,
             };
-            
-            // Afficher le popup uniquement pour les nouvelles notifications non lues
+
+            // Afficher un toast pour les nouvelles notifications non lues
+            // (Seulement si ce n'est pas le premier chargement)
             if (!newNotif.read && notifications.value.length > 0) {
               latestNotification.value = newNotif;
-              showPopup.value = true;
-              
-              // Masquer automatiquement après 5 secondes
-              setTimeout(() => {
-                if (latestNotification.value?.id === newNotif.id) {
-                  showPopup.value = false;
-                }
-              }, 5000);
+              showToast(newNotif);
             }
           }
         });
@@ -146,7 +141,7 @@ export function useUserNotifications() {
    */
   async function markAsRead(notificationId: string) {
     const user = auth.currentUser;
-    
+
     if (!user) return;
 
     try {
@@ -154,7 +149,7 @@ export function useUserNotifications() {
       await updateDoc(notifRef, {
         read: true,
       });
-      
+
       console.log(`✅ Notification ${notificationId} marquée comme lue`);
     } catch (error) {
       console.error('Erreur lors du marquage comme lu:', error);
@@ -166,23 +161,72 @@ export function useUserNotifications() {
    */
   async function markAllAsRead() {
     const user = auth.currentUser;
-    
+
     if (!user) return;
 
     try {
       const unreadNotifications = notifications.value.filter(n => !n.read);
-      
+
       const promises = unreadNotifications.map(notification => {
         const notifRef = doc(db, 'user_notifications', user.uid, 'notifications', notification.id);
         return updateDoc(notifRef, { read: true });
       });
 
       await Promise.all(promises);
-      
+
       console.log(`✅ ${unreadNotifications.length} notifications marquées comme lues`);
     } catch (error) {
       console.error('Erreur lors du marquage de toutes les notifications:', error);
     }
+  }
+
+  /**
+   * Afficher un toast pour une notification
+   */
+  async function showToast(notification: UserNotification) {
+    const color = getToastColor(notification);
+    const icon = getNotificationIcon(notification);
+
+    const toast = await toastController.create({
+      header: notification.title,
+      message: notification.message,
+      duration: 5000,
+      position: 'top',
+      color: color,
+      icon: icon,
+      buttons: [
+        {
+          text: 'Voir',
+          role: 'info',
+          handler: () => {
+            handleNotificationClick(notification);
+          }
+        },
+        {
+          text: 'Fermer',
+          role: 'cancel'
+        }
+      ],
+      cssClass: 'notification-toast'
+    });
+
+    await toast.present();
+  }
+
+  /**
+   * Obtenir la couleur du toast selon le type et l'action
+   */
+  function getToastColor(notification: UserNotification): string {
+    if (notification.action === 'RESOLVED') {
+      return 'success';
+    }
+    if (notification.action === 'CREATED') {
+      return 'primary';
+    }
+    if (notification.action === 'STATUS_CHANGED') {
+      return 'warning';
+    }
+    return 'medium';
   }
 
   /**
@@ -200,10 +244,10 @@ export function useUserNotifications() {
     if (!notification.read) {
       await markAsRead(notification.id);
     }
-    
+
     // Fermer le popup
     closePopup();
-    
+
     // Retourner les infos pour navigation
     return {
       type: notification.type,
@@ -255,7 +299,7 @@ export function useUserNotifications() {
     unreadCount,
     latestNotification,
     showPopup,
-    
+
     // Actions
     subscribeToNotifications,
     unsubscribeFromNotifications,
@@ -263,7 +307,8 @@ export function useUserNotifications() {
     markAllAsRead,
     closePopup,
     handleNotificationClick,
-    
+    showToast,
+
     // Helpers
     getNotificationIcon,
     getNotificationColor,

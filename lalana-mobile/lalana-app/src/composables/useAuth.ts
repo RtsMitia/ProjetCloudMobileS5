@@ -2,6 +2,7 @@ import { ref, computed } from 'vue';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/services/firebase/firebase';
 import { useRouter } from 'vue-router';
+import { Capacitor } from '@capacitor/core';
 
 /**
  * Composable pour gérer l'authentification Firebase
@@ -29,6 +30,22 @@ export function useAuth() {
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       currentUser.value = userCredential.user;
       console.log('✅ Connecté:', userCredential.user.uid);
+
+      // Initialiser les notifications push SEULEMENT sur mobile natif
+      if (Capacitor.isNativePlatform()) {
+        setTimeout(async () => {
+          try {
+            const { notificationService } = await import('@/services/notification.service');
+            console.log('🔔 [AUTH] Initialisation notifications push pour userId:', userCredential.user.uid);
+            await notificationService.initialize();
+          } catch (notifError) {
+            console.error('❌ Erreur init notifications (non bloquant):', notifError);
+          }
+        }, 500);
+      } else {
+        console.log('ℹ️ [AUTH] Plateforme web, notifications via Firestore onSnapshot');
+      }
+
       return true;
     } catch (e: any) {
       console.error('❌ Erreur auth Firebase:', e);
