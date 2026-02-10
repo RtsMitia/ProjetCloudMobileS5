@@ -30,4 +30,7 @@ public class User {
 
     @Column(name = "firestore_synced", nullable = false , columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean firestoreSynced;
+
+    @Column(name = "fcm_token", length = 255)
+    private String fcmToken;
 }

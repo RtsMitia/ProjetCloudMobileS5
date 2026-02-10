@@ -152,7 +152,7 @@ public class SyncService {
             System.out.println("Loading images via repository for signalement id=" + s.getId());
             List<SignalementImage> images = signalementImageRepository.findBySignalementId(s.getId());
             System.out.println("Found " + images.size() + " images for signalement id=" + s.getId());
-            
+
             List<String> photoUrls = new java.util.ArrayList<>();
             for (SignalementImage img : images) {
                 if (img.getCheminOnline() != null && !img.getCheminOnline().isEmpty()) {
@@ -183,22 +183,28 @@ public class SyncService {
                     }
                 }
 
-                // ✅ Envoi direct de notification FCM après sync réussie
-                System.out.println("🔍 [SYNC] Vérification notification pour signalement id=" + dto.getId()
-                        + ", userId=" + dto.getUserId() + ", token=" +
-                        (dto.getUserToken() != null
-                                ? dto.getUserToken().substring(0, Math.min(20, dto.getUserToken().length())) + "..."
-                                : "null"));
+                // ✅ Récupération du vrai FCM token depuis userTokens/{firebaseUid} dans
+                // Firestore
+                String firebaseUid = dto.getUserToken(); // C'est le Firebase UID, pas le FCM token
+                String resolvedFcmToken = null;
+                if (firebaseUid != null && !firebaseUid.isEmpty()) {
+                    System.out.println("🔍 [SYNC] Récupération du FCM token depuis userTokens/" + firebaseUid);
+                    resolvedFcmToken = fcmNotificationService.getFcmTokenFromFirestore(firebaseUid);
+                    System.out.println("🔍 [SYNC] FCM token résolu: " +
+                            (resolvedFcmToken != null
+                                    ? resolvedFcmToken.substring(0, Math.min(20, resolvedFcmToken.length())) + "..."
+                                    : "null"));
+                }
 
-                if (dto.getUserToken() != null && !dto.getUserToken().isEmpty() &&
-                        dto.getUserId() != null) {
+                // ✅ Envoi direct de notification FCM après sync réussie
+                if (resolvedFcmToken != null && !resolvedFcmToken.isEmpty() && dto.getUserId() != null) {
                     System.out.println(
-                            "✅ [SYNC] Conditions remplies, appel du service FCM pour signalement id=" + dto.getId());
+                            "✅ [SYNC] Conditions remplies, envoi notification FCM pour signalement id=" + dto.getId());
                     try {
                         boolean notifSent = fcmNotificationService.sendSignalementCreatedNotification(
                                 dto.getId(),
                                 String.valueOf(dto.getUserId()),
-                                dto.getUserToken(),
+                                resolvedFcmToken,
                                 dto.getDescription());
                         if (notifSent) {
                             System.out.println("📧 [SYNC] Notification FCM envoyée avec succès pour signalement id="
@@ -208,17 +214,15 @@ public class SyncService {
                                     "⚠️ [SYNC] Échec envoi notification FCM pour signalement id=" + dto.getId());
                         }
                     } catch (Exception notifError) {
-                        logger.warn("⚠️ Impossible d'enregistrer la notification pour signalement id={}: {}", 
-                            dto.getId(), notifError.getMessage());
-                        // On ne fait pas échouer la sync si la notification échoue
+                        logger.warn("⚠️ Impossible d'enregistrer la notification pour signalement id={}: {}",
+                                dto.getId(), notifError.getMessage());
                         System.out.println("❌ [SYNC] Exception lors de l'envoi de notification pour signalement id="
                                 + dto.getId() + ": " + notifError.getMessage());
                         notifError.printStackTrace();
                     }
                 } else {
-                    System.out.println("⚠️ [SYNC] Conditions non remplies pour notification: userId=" + dto.getUserId()
-                            + ", token présent=" +
-                            (dto.getUserToken() != null && !dto.getUserToken().isEmpty()));
+                    System.out.println("⚠️ [SYNC] Pas de FCM token trouvé pour firebaseUid=" + firebaseUid
+                            + ", userId=" + dto.getUserId() + " - notification non envoyée");
                 }
             } catch (Exception e) {
                 System.out.println("❌ [SYNC] Erreur sync signalement id=" + s.getId() + ": " + e.getMessage());
@@ -235,8 +239,10 @@ public class SyncService {
         Firestore db = FirestoreClient.getFirestore();
 
         for (Probleme p : rows) {
-            System.out.println("Processing probleme id=" + p.getId() + ", valeur=" + p.getProblemeStatus().getValeur() + ", firestoreSynced=" + p.getFirestoreSynced());
-            if (p.getFirestoreSynced() != null && p.getFirestoreSynced()) continue;
+            System.out.println("Processing probleme id=" + p.getId() + ", valeur=" + p.getProblemeStatus().getValeur()
+                    + ", firestoreSynced=" + p.getFirestoreSynced());
+            if (p.getFirestoreSynced() != null && p.getFirestoreSynced())
+                continue;
             String docId = String.valueOf(p.getId());
             ProblemeDto dto = ProblemeDto.fromEntity(p);
             Map<String, Object> doc = new HashMap<>();
@@ -262,10 +268,12 @@ public class SyncService {
             // Charger les images via repository pour éviter le problème de lazy loading
             List<String> photoUrls = new java.util.ArrayList<>();
             if (p.getSignalement() != null && p.getSignalement().getId() != null) {
-                System.out.println("Loading images via repository for probleme id=" + p.getId() + " (signalement id=" + p.getSignalement().getId() + ")");
-                List<SignalementImage> images = signalementImageRepository.findBySignalementId(p.getSignalement().getId());
+                System.out.println("Loading images via repository for probleme id=" + p.getId() + " (signalement id="
+                        + p.getSignalement().getId() + ")");
+                List<SignalementImage> images = signalementImageRepository
+                        .findBySignalementId(p.getSignalement().getId());
                 System.out.println("Found " + images.size() + " images for probleme id=" + p.getId());
-                
+
                 for (SignalementImage img : images) {
                     if (img.getCheminOnline() != null && !img.getCheminOnline().isEmpty()) {
                         photoUrls.add(img.getCheminOnline());
@@ -290,9 +298,6 @@ public class SyncService {
         }
         return count;
     }
-
-
-
 
     public int deleteSignalementsValeur30() {
         int deleted = 0;
