@@ -14,5 +14,5 @@ export function isLogedIn(token) {
 }
 
 export function pathImages() {
-    return `${API_BASE_URL}/images/`;
+    return `${API_BASE_URL}/images/signalement/`;
 }

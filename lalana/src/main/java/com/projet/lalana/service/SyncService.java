@@ -13,6 +13,9 @@ import com.projet.lalana.model.SignalementImage;
 import com.projet.lalana.repository.ProblemeRepository;
 import com.projet.lalana.repository.SignalementRepository;
 import com.projet.lalana.repository.SignalementImageRepository;
+import com.projet.lalana.repository.UserRepository;
+import com.projet.lalana.model.User;
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
 import jakarta.transaction.Transactional;
@@ -39,6 +42,7 @@ public class SyncService {
     private final ProblemeService problemeService;
     private final UserService userService;
     private final FcmNotificationService fcmNotificationService;
+    private final UserRepository userRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(SyncService.class);
 
@@ -113,7 +117,11 @@ public class SyncService {
         result.put("deleted_signalements", delSig);
         result.put("deleted_problemes", delProb);
 
-        // 6) snapshots
+        // 6) Sync FCM tokens from Firestore userTokens collection into local users
+        int fcmTokensSynced = syncFcmTokensFromFirestore();
+        result.put("fcm_tokens_synced", fcmTokensSynced);
+
+        // 7) snapshots
         try {
             result.put("all_signalements", signalementService.getAll());
         } catch (Exception ignored) {
@@ -354,7 +362,11 @@ public class SyncService {
             // 3) Push local unblocked users back to Firebase
             List<com.projet.lalana.model.User> reactivated = userService.syncUnblockedUserToFirebase();
 
-            // 4) Prepare current snapshots to return
+            // 4) Sync FCM tokens from Firestore userTokens into local users
+            int fcmSynced = syncFcmTokensFromFirestore();
+            logger.info("[FULL-SYNC] {} FCM tokens synchronisés", fcmSynced);
+
+            // 5) Prepare current snapshots to return
             List<Signalement> allSignalements = signalementService.getAll();
             List<Probleme> allProblemes = problemeService.getAll();
 
@@ -369,6 +381,46 @@ public class SyncService {
         } catch (Exception e) {
             throw new ServiceException("Erreur lors de la synchronisation générale", e);
         }
+    }
+
+    /**
+     * Sync FCM tokens from Firestore userTokens collection into local User entities.
+     * For each user with a firebase_token, reads userTokens/{firebase_token}.fcmToken
+     * and stores it in the user's fcmToken field.
+     */
+    public int syncFcmTokensFromFirestore() {
+        logger.info("[SYNC] Démarrage de la synchronisation des FCM tokens depuis Firestore...");
+        List<User> allUsers = userRepository.findAll();
+        int count = 0;
+        Firestore db = FirestoreClient.getFirestore();
+
+        for (User user : allUsers) {
+            String firebaseUid = user.getFirebaseToken();
+            if (firebaseUid == null || firebaseUid.isEmpty()) {
+                continue;
+            }
+            try {
+                DocumentSnapshot tokenDoc = db.collection("userTokens")
+                        .document(firebaseUid)
+                        .get()
+                        .get();
+
+                if (tokenDoc.exists() && tokenDoc.contains("fcmToken")) {
+                    String fcmToken = tokenDoc.getString("fcmToken");
+                    if (fcmToken != null && !fcmToken.isEmpty()) {
+                        user.setFcmToken(fcmToken);
+                        userRepository.save(user);
+                        count++;
+                        logger.info("[SYNC] FCM token mis à jour pour user id={} (firebaseUid={})", user.getId(), firebaseUid);
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("[SYNC] Erreur récupération FCM token pour user id={} (firebaseUid={}): {}",
+                        user.getId(), firebaseUid, e.getMessage());
+            }
+        }
+        logger.info("[SYNC] {} FCM token(s) synchronisé(s)", count);
+        return count;
     }
 
     @Transactional
