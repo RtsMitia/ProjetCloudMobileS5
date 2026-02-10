@@ -1,12 +1,12 @@
 import API_BASE_URL from "../api/config";
 
 async function getTokenAdmin() {
-    return "8QJvhU9Y2NObcNGvXfYPeoe87O22";
+    return "ts2LXs3eOzgP1z1DB1ffNk4xxWh2";
 }
 
 export async function isAdminToken(token) {
-    return true;
-    // return token === await getTokenAdmin();
+    //return true;
+    return token === await getTokenAdmin();
 }
 
 export function isLogedIn(token) {
