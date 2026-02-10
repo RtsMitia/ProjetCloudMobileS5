@@ -86,6 +86,7 @@ export interface Entreprise {
  */
 export interface Probleme {
   id?: number | null;
+  niveau: number;
   surface: number; // m²
   budgetEstime: number;
   entrepriseId: number | null;

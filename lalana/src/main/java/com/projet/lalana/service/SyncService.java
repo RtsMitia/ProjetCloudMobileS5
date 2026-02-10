@@ -7,6 +7,7 @@ import com.google.cloud.firestore.WriteResult;
 import com.google.firebase.cloud.FirestoreClient;
 import com.projet.lalana.dto.SignalementDto;
 import com.projet.lalana.model.Probleme;
+import com.projet.lalana.dto.ProblemeDto;
 import com.projet.lalana.model.Signalement;
 import com.projet.lalana.repository.ProblemeRepository;
 import com.projet.lalana.repository.SignalementRepository;
@@ -99,6 +100,9 @@ public class SyncService {
         // 1) push local -> Firestore
         int pushed = syncSignalements();
         result.put("pushed_signalements", pushed);
+        // 1.b) push local problems -> Firestore
+        int pushedProblemes = syncProblemes();
+        result.put("pushed_problemes", pushedProblemes);
 
         // 2) cleanup firestore
         int delSig = deleteSignalementsValeur30();
@@ -139,6 +143,16 @@ public class SyncService {
             doc.put("statusLibelle", dto.getStatusLibelle());
             doc.put("valeur", dto.getValeur());
 
+            List<String> photoUrls = new java.util.ArrayList<>();
+            if (dto.getImages() != null) {
+                for (var img : dto.getImages()) {
+                    if (img.getCheminOnline() != null && !img.getCheminOnline().isEmpty()) {
+                        photoUrls.add(img.getCheminOnline());
+                    }
+                }
+            }
+            doc.put("photoUrls", photoUrls);
+
             try {
                 DocumentReference ref = db.collection("signalementListe").document(docId);
                 ApiFuture<WriteResult> w = ref.set(doc);
@@ -159,7 +173,6 @@ public class SyncService {
                             logger.info("📧 Intention de notification enregistrée pour signalement id={}", dto.getId());
                         }
                     } catch (Exception notifError) {
-                        // On ne fait pas échouer la sync si la notification échoue
                         logger.warn("⚠️ Impossible d'enregistrer la notification pour signalement id={}: {}", 
                             dto.getId(), notifError.getMessage());
                     }
@@ -171,8 +184,51 @@ public class SyncService {
         return count;
     }
 
+    public int syncProblemes() {
+        List<Probleme> rows = problemeRepository.findByValeur(10);
+        int count = 0;
+        Firestore db = FirestoreClient.getFirestore();
 
-    
+        for (Probleme p : rows) {
+            System.out.println("Processing probleme id=" + p.getId() + ", valeur=" + p.getProblemeStatus().getValeur() + ", firestoreSynced=" + p.getFirestoreSynced());
+            if (p.getFirestoreSynced() != null && p.getFirestoreSynced()) continue;
+            String docId = String.valueOf(p.getId());
+            ProblemeDto dto = ProblemeDto.fromEntity(p);
+            Map<String, Object> doc = new HashMap<>();
+            doc.put("id", dto.getId());
+            doc.put("surface", dto.getSurface());
+            doc.put("budgetEstime", dto.getBudgetEstime());
+            doc.put("niveau", dto.getNiveau());
+            doc.put("entrepriseId", dto.getEntrepriseId());
+            doc.put("entrepriseName", dto.getEntrepriseName());
+            doc.put("statusId", dto.getStatusId());
+            doc.put("statusNom", dto.getStatusNom());
+            doc.put("statusValeur", dto.getStatusValeur());
+            doc.put("signalementId", dto.getSignalementId());
+            doc.put("userId", dto.getUserId());
+            doc.put("userEmail", dto.getUserEmail());
+            doc.put("x", dto.getX());
+            doc.put("y", dto.getY());
+            doc.put("localisation", dto.getLocalisation());
+            doc.put("description", dto.getDescription());
+            doc.put("createdAt", dto.getCreatedAt() != null ? dto.getCreatedAt().toString() : null);
+            doc.put("statusLibelle", dto.getStatusLibelle());
+
+            try {
+                DocumentReference ref = db.collection("problemes").document(docId);
+                ApiFuture<WriteResult> w = ref.set(doc);
+                w.get();
+                markProblemeSynced(p.getId());
+                count++;
+            } catch (Exception e) {
+                System.out.println("Failed to sync probleme id=" + p.getId() + " : " + e.getMessage());
+            }
+        }
+        return count;
+    }
+
+
+
 
     public int deleteSignalementsValeur30() {
         int deleted = 0;
@@ -252,6 +308,14 @@ public class SyncService {
                 .orElseThrow(() -> new RuntimeException("Signalement not found " + id));
         s.setFirestoreSynced(true);
         signalementRepository.save(s);
+    }
+
+    @Transactional
+    protected void markProblemeSynced(Integer id) {
+        Probleme p = problemeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Probleme not found " + id));
+        p.setFirestoreSynced(true);
+        problemeRepository.save(p);
     }
 
     public static class SyncResult {

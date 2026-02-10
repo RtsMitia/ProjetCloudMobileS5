@@ -13,8 +13,6 @@ public interface ProblemeRepository extends JpaRepository<Probleme, Integer> {
 
         @Query("""
             SELECT p FROM Probleme p
-            JOIN FETCH p.signalement s
-            JOIN FETCH s.images i
             WHERE p.problemeStatus.valeur <= :valeur
             """)
         List<Probleme> findByValeur(Integer valeur);

@@ -4,6 +4,7 @@ import type { Probleme, ProblemeRequest } from '@/types/firestore';
 import { useAuth } from './useAuth';
 
 export function useProblemes() {
+  console.log('🔧 [useProblemes] Initialisation du composable');
   const { currentUser, isAuthenticated } = useAuth();
   
   const problemes = ref<Probleme[]>([]);
@@ -15,11 +16,16 @@ export function useProblemes() {
   const filterBySignalement = ref<number | null>(null);
   
   let unsubscribe: (() => void) | null = null;
+  
+  console.log('🔧 [useProblemes] Composable initialisé, refs créés');
 
   function subscribeToProblemes(): void {
+    console.log('🔧 Souscription aux problèmes...');
     unsubscribe = problemeService.subscribeToProblemes((newProblemes) => {
+      console.log(`🔧 ${newProblemes.length} problèmes reçus de Firestore`);
       problemes.value = newProblemes;
       applyFilters();
+      console.log(`🔧 ${filteredProblemes.value.length} problèmes après filtrage`);
     });
   }
 
@@ -52,6 +58,7 @@ export function useProblemes() {
     }
 
     filteredProblemes.value = filtered;
+    console.log(`🔧 Filtres appliqués: ${filtered.length} problèmes (sur ${problemes.value.length} total)`);
   }
 
   async function createProbleme(data: ProblemeRequest): Promise<string> {
