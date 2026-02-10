@@ -110,7 +110,6 @@ watch(filteredSignalements, (newSignalements) => {
   displaySignalements(newSignalements);
 });
 
-// 🔔 S'abonner/désabonner aux notifications selon l'état d'authentification
 watch(isAuthenticated, (authenticated) => {
   if (authenticated) {
     subscribeToNotifications();

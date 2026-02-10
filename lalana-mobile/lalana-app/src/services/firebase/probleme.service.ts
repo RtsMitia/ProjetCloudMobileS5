@@ -33,6 +33,7 @@ export class ProblemeService {
                 id: null,
                 surface: data.surface,
                 budgetEstime: data.budgetEstime,
+                niveau: data.niveau || 1,
                 entrepriseId: data.entrepriseId || null,
                 entrepriseName: data.entrepriseName || null,
                 entrepriseContact: data.entrepriseContact || null,
@@ -189,30 +190,47 @@ export class ProblemeService {
     subscribeToProblemes(
         callback: (problemes: Probleme[]) => void
     ): () => void {
-        const q = query(
-            collection(db, this.collectionName),
-            orderBy('createdAt', 'desc')
-        );
+        console.log('🔧 [ProblemeService] Création de la souscription Firestore...');
+        
+        let q;
+        try {
+            q = query(
+                collection(db, this.collectionName),
+                orderBy('createdAt', 'desc')
+            );
+            console.log('🔧 [ProblemeService] Query avec orderBy créée');
+        } catch (error) {
+            console.warn('⚠️ [ProblemeService] Erreur lors de la création de la query avec orderBy, utilisation sans tri:', error);
+            q = query(collection(db, this.collectionName));
+        }
+
+        console.log('🔧 [ProblemeService] Query créée, attente des données...');
 
         const unsubscribe = onSnapshot(
             q,
             (querySnapshot: QuerySnapshot<DocumentData>) => {
+                console.log(`🔧 [ProblemeService] Snapshot reçu avec ${querySnapshot.size} documents`);
                 const problemes: Probleme[] = [];
                 querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    console.log(`🔧 [ProblemeService] Doc ${doc.id}:`, data);
                     problemes.push({
                         id: doc.id,
-                        ...doc.data()
+                        ...data
                     } as unknown as Probleme);
                 });
 
-                console.log(`${problemes.length} problèmes reçus de Firestore`);
+                console.log(`🔧 [ProblemeService] ${problemes.length} problèmes parsés, appel du callback`);
                 callback(problemes);
             },
             (error) => {
-                console.error('Erreur lors de l\'écoute des problèmes:', error);
+                console.error('❌ [ProblemeService] Erreur lors de l\'écoute des problèmes:', error);
+                console.error('❌ [ProblemeService] Code erreur:', error.code);
+                console.error('❌ [ProblemeService] Message:', error.message);
             }
         );
 
+        console.log('🔧 [ProblemeService] Listener enregistré');
         return unsubscribe;
     }
 

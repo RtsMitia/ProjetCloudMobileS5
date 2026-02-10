@@ -1,7 +1,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { Signalement } from '@/types/firestore';
+import type { Signalement, Probleme } from '@/types/firestore';
 
 // Fix pour les icônes de marqueurs Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -27,6 +27,7 @@ export function useMap(containerId: string = 'map') {
   let map: L.Map | null = null;
   const isMapReady = ref(false);
   const signalementMarkers = new Map<string, L.Marker>();
+  const problemeMarkers = new Map<string, L.Marker>();
   let tempMarker: L.Marker | null = null;
   let userLocationMarker: L.Marker | null = null;
   const userLocation = ref<{ lat: number; lng: number } | null>(null);
@@ -242,45 +243,90 @@ export function useMap(containerId: string = 'map') {
     }
   }
 
-  function createStatusIcon(status: string): L.DivIcon {
+  function createStatusIcon(status: string, isProbleme: boolean = false): L.DivIcon {
     let iconConfig = {
       color: '#3b82f6',
       symbol: '●',
-      bgColor: '#fff'
+      bgColor: '#fff',
+      shape: 'circle'
     };
 
-    switch (status.toLowerCase()) {
-      case 'en attente':
-        iconConfig = {
-          color: '#f59e0b',
-          symbol: '⏱',
-          bgColor: '#fff'
-        };
-        break;
-      case 'validé':
-      case 'en cours':
-        iconConfig = {
-          color: '#3b82f6',
-          symbol: '⚙',
-          bgColor: '#fff'
-        };
-        break;
-      case 'résolu':
-      case 'terminé':
-        iconConfig = {
-          color: '#10b981',
-          symbol: '✓',
-          bgColor: '#fff'
-        };
-        break;
-      case 'rejeté':
-        iconConfig = {
-          color: '#ef4444',
-          symbol: '✕',
-          bgColor: '#fff'
-        };
-        break;
+    if (isProbleme) {
+      switch (status.toLowerCase()) {
+        case 'ouvert':
+        case 'en attente':
+          iconConfig = {
+            color: '#f59e0b',
+            symbol: '🔧',
+            bgColor: '#fff',
+            shape: 'square'
+          };
+          break;
+        case 'en cours':
+          iconConfig = {
+            color: '#3b82f6',
+            symbol: '⚙',
+            bgColor: '#fff',
+            shape: 'square'
+          };
+          break;
+        case 'terminé':
+        case 'résolu':
+          iconConfig = {
+            color: '#10b981',
+            symbol: '✓',
+            bgColor: '#fff',
+            shape: 'square'
+          };
+          break;
+        default:
+          iconConfig = {
+            color: '#6b7280',
+            symbol: '🔧',
+            bgColor: '#fff',
+            shape: 'square'
+          };
+      }
+    } else {
+      switch (status.toLowerCase()) {
+        case 'en attente':
+          iconConfig = {
+            color: '#f59e0b',
+            symbol: '⏱',
+            bgColor: '#fff',
+            shape: 'circle'
+          };
+          break;
+        case 'validé':
+        case 'en cours':
+          iconConfig = {
+            color: '#3b82f6',
+            symbol: '⚙',
+            bgColor: '#fff',
+            shape: 'circle'
+          };
+          break;
+        case 'résolu':
+        case 'terminé':
+          iconConfig = {
+            color: '#10b981',
+            symbol: '✓',
+            bgColor: '#fff',
+            shape: 'circle'
+          };
+          break;
+        case 'rejeté':
+          iconConfig = {
+            color: '#ef4444',
+            symbol: '✕',
+            bgColor: '#fff',
+            shape: 'circle'
+          };
+          break;
+      }
     }
+
+    const borderRadius = iconConfig.shape === 'circle' ? '50%' : '8px';
 
     return L.divIcon({
       className: 'custom-marker',
@@ -289,7 +335,7 @@ export function useMap(containerId: string = 'map') {
           background-color: ${iconConfig.bgColor}; 
           width: 40px; 
           height: 40px; 
-          border-radius: 50%; 
+          border-radius: ${borderRadius}; 
           border: 3px solid ${iconConfig.color}; 
           box-shadow: 0 3px 8px rgba(0,0,0,0.25);
           display: flex;
@@ -428,7 +474,7 @@ export function useMap(containerId: string = 'map') {
       const lng = signalement.x;
 
       const marker = L.marker([lat, lng], {
-        icon: createStatusIcon(signalement.statusLibelle)
+        icon: createStatusIcon(signalement.statusLibelle, false)
       }).addTo(map);
 
       marker.bindPopup(createPopupContent(signalement));
@@ -438,6 +484,150 @@ export function useMap(containerId: string = 'map') {
     });
 
     console.log(`✅ ${signalements.length} signalements affichés sur la carte`);
+  }
+
+  function createProblemePopupContent(probleme: Probleme): string {
+    let dateStr = 'Date inconnue';
+    if (probleme.createdAt) {
+      const date = typeof probleme.createdAt === 'string' 
+        ? new Date(probleme.createdAt)
+        : probleme.createdAt.toDate();
+      dateStr = date.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    let statusIcon = '🔧';
+    let statusColor = '#3b82f6';
+    
+    switch (probleme.statusNom?.toLowerCase()) {
+      case 'ouvert':
+      case 'en attente':
+        statusIcon = '🔧';
+        statusColor = '#f59e0b';
+        break;
+      case 'en cours':
+        statusIcon = '⚙';
+        statusColor = '#3b82f6';
+        break;
+      case 'terminé':
+      case 'résolu':
+        statusIcon = '✓';
+        statusColor = '#10b981';
+        break;
+    }
+
+    const niveauText = probleme.niveau ? `Niveau ${probleme.niveau}/10` : '';
+    const surfaceText = probleme.surface ? `${probleme.surface.toFixed(2)} m²` : '';
+    const budgetText = probleme.budgetEstime ? `${probleme.budgetEstime.toLocaleString('fr-FR')} Ar` : '';
+
+    let imagesPayload = '[]';
+    if (probleme.photoUrls && probleme.photoUrls.length > 0) {
+      imagesPayload = JSON.stringify(probleme.photoUrls.map((url: string, idx: number) => ({
+        cheminOnline: url,
+        cheminLocal: null,
+        nomFichier: `photo-${idx + 1}.jpg`
+      })));
+    }
+
+    return `
+      <div style="min-width: 220px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <h3 style="margin: 0 0 12px 0; color: #1a1a1a; font-size: 16px; font-weight: 600; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px;">
+          🔧 Problème
+        </h3>
+        <p style="margin: 8px 0; font-size: 14px; line-height: 1.5;">
+          <strong style="color: #1a1a1a;">Description:</strong><br/>
+          <span style="color: #4b5563;">${probleme.description || 'Aucune description'}</span>
+        </p>
+        ${niveauText ? `<p style="margin: 8px 0; font-size: 13px;">
+          <strong>Criticité:</strong> <span style="color: ${probleme.niveau && probleme.niveau > 7 ? '#ef4444' : probleme.niveau && probleme.niveau > 4 ? '#f59e0b' : '#10b981'}; font-weight: 600;">${niveauText}</span>
+        </p>` : ''}
+        ${surfaceText ? `<p style="margin: 8px 0; font-size: 13px;">
+          <strong>Surface:</strong> ${surfaceText}
+        </p>` : ''}
+        ${budgetText ? `<p style="margin: 8px 0; font-size: 13px;">
+          <strong>Budget estimé:</strong> ${budgetText}
+        </p>` : ''}
+        ${probleme.entrepriseName ? `<p style="margin: 8px 0; font-size: 13px;">
+          <strong>Entreprise:</strong> ${probleme.entrepriseName}
+        </p>` : ''}
+        <p style="margin: 8px 0; font-size: 12px; color: #6b7280; line-height: 1.4;">
+          <strong>Localisation:</strong><br/>
+          Latitude: ${probleme.y?.toFixed(6)}<br/>
+          Longitude: ${probleme.x?.toFixed(6)}<br/>
+          ${probleme.localisation || 'Non spécifiée'}
+        </p>
+        <p style="margin: 10px 0 8px 0; font-size: 13px;">
+          <strong style="color: #1a1a1a;">Statut:</strong> 
+          <span style="
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px; 
+            border-radius: 6px; 
+            background-color: ${statusColor}15;
+            border: 1.5px solid ${statusColor};
+            font-weight: 600;
+            color: ${statusColor};
+          ">
+            <span style="font-size: 16px;">${statusIcon}</span>
+            ${probleme.statusNom || 'Inconnu'}
+          </span>
+        </p>
+        <p style="margin: 8px 0 0 0; font-size: 11px; color: #9ca3af; font-style: italic;">
+          📅 ${dateStr}
+        </p>
+        ${imagesPayload !== '[]' ? `<div style="margin-top:8px; text-align:center;">
+          <button onclick='window.dispatchEvent(new CustomEvent("show-signalement-images", { detail: { images: ${imagesPayload} }}))' style="background:#2563eb;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-weight:600;">Voir les images</button>
+        </div>` : ''}
+      </div>
+    `;
+  }
+
+  function displayProblemes(problemes: Probleme[]): void {
+    if (!map) {
+      console.warn('🔧 Map non initialisée, impossible d\'afficher les problèmes');
+      return;
+    }
+
+    console.log(`🔧 Affichage de ${problemes.length} problèmes sur la carte`);
+
+    problemeMarkers.forEach((marker) => {
+      map?.removeLayer(marker);
+    });
+    problemeMarkers.clear();
+
+    problemes.forEach((probleme, index) => {
+      if (!map) return;
+      if (!probleme.y || !probleme.x) {
+        console.warn(`🔧 Problème ${index} sans coordonnées:`, probleme);
+        return;
+      }
+
+      const lat = probleme.y;
+      const lng = probleme.x;
+
+      console.log(`🔧 Ajout marqueur problème à [${lat}, ${lng}]`, {
+        id: probleme.id,
+        statusNom: probleme.statusNom,
+        niveau: probleme.niveau
+      });
+
+      const marker = L.marker([lat, lng], {
+        icon: createStatusIcon(probleme.statusNom || 'ouvert', true)
+      }).addTo(map);
+
+      marker.bindPopup(createProblemePopupContent(probleme));
+
+      const markerId = String(probleme.id || `prob-${lat}-${lng}-${Date.now()}`);
+      problemeMarkers.set(markerId, marker);
+    });
+
+    console.log(`✅ ${problemes.length} problèmes affichés sur la carte`);
   }
 
   function addTempMarker(lat: number, lng: number): void {
@@ -471,6 +661,7 @@ export function useMap(containerId: string = 'map') {
     initMap,
     destroyMap,
     displaySignalements,
+    displayProblemes,
     addTempMarker,
     removeTempMarker,
     setView,

@@ -55,19 +55,28 @@ public class SignalementDto {
         SignalementDto dto = b.build();
         List<SignalementImageDTO> imageDtos = new ArrayList<>();
         try {
+            System.out.println("SignalementDto.fromEntity - Signalement ID: " + s.getId());
             if (s.getImages() != null) {
+                System.out.println("SignalementDto.fromEntity - Images collection is not null, size: " + s.getImages().size());
                 for (SignalementImage img : s.getImages()) {
+                    System.out.println("SignalementDto.fromEntity - Processing image: " + img.getNomFichier());
                     SignalementImageDTO imgDto = new SignalementImageDTO();
                     imgDto.setCheminLocal(img.getCheminLocal());
                     imgDto.setCheminOnline(img.getCheminOnline());
                     imgDto.setNomFichier(img.getNomFichier());
                     imageDtos.add(imgDto);
                 }
+                System.out.println("SignalementDto.fromEntity - Total images mapped: " + imageDtos.size());
+            } else {
+                System.out.println("SignalementDto.fromEntity - Images collection is NULL (lazy loading failed?)");
             }
         } catch (Exception e) {
             // Lazy loading may fail if session is closed
+            System.err.println("SignalementDto.fromEntity - ERROR loading images for signalement " + s.getId() + ": " + e.getClass().getName() + " - " + e.getMessage());
+            e.printStackTrace();
         }
         dto.setImages(imageDtos);
+        System.out.println("SignalementDto.fromEntity - Final DTO has " + (dto.getImages() != null ? dto.getImages().size() : 0) + " images");
         return dto;
     }
     

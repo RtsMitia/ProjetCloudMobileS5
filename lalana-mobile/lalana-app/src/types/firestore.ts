@@ -86,6 +86,7 @@ export interface Entreprise {
  */
 export interface Probleme {
   id?: number | null;
+  niveau: number;
   surface: number; // m²
   budgetEstime: number;
   entrepriseId: number | null;
@@ -102,13 +103,15 @@ export interface Probleme {
   localisation: string;
   description: string;
   statusLibelle: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: Timestamp | string;
+  updatedAt?: Timestamp | string;
+  photoUrls?: string[];
 }
 
 export interface ProblemeRequest {
   id?: null;
   surface: number;
+  niveau : number;
   budgetEstime: number;
   entrepriseId?: number | null;
   entrepriseName?: string | null;

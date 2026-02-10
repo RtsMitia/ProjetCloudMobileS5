@@ -48,11 +48,12 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { IonPage, IonContent } from '@ionic/vue';
 import { MapHeader, MapFilters, MapLoader, AddSignalementButton, UserLocationButton } from '@/components/map';
-import { useAuth, useSignalements, useMap } from '@/composables';
+import { useAuth, useSignalements, useMap, useProblemes } from '@/composables';
 import { alertService } from '@/services/alert.service';
 import SignalementImagesViewer from '@/components/SignalementImagesViewer.vue';
 
 // Composables
+console.log('🟢 DEBUT Initialisation des composables MapPage.vue');
 const { isAuthenticated, logout, goToLogin, currentUser } = useAuth();
 const { 
   signalements,
@@ -64,6 +65,16 @@ const {
   applyFilters,
   createSignalement
 } = useSignalements();
+console.log('🟢 useSignalements OK');
+
+const {
+  problemes,
+  filteredProblemes,
+  subscribeToProblemes,
+  unsubscribeFromProblemes
+} = useProblemes();
+console.log('🟢 useProblemes OK, subscribeToProblemes:', typeof subscribeToProblemes);
+
 const { 
   isMapReady,
   isTrackingLocation,
@@ -71,12 +82,14 @@ const {
   initMap, 
   destroyMap, 
   displaySignalements,
+  displayProblemes,
   addTempMarker,
   removeTempMarker,
   startTrackingLocation,
   stopTrackingLocation,
   centerOnUserLocation
 } = useMap();
+console.log('🟢 useMap OK, displayProblemes:', typeof displayProblemes);
 
 // State local
 const showFilters = ref(false);
@@ -87,9 +100,12 @@ const modalImages = ref<any[]>([]);
 
 // Lifecycle
 onMounted(() => {
+  console.log('🗺️ MapPage.vue mounted');
   setTimeout(() => {
     initMap(handleMapClick);
     subscribeToSignalements();
+    console.log('🔧 Appel subscribeToProblemes...');
+    subscribeToProblemes();
   }, 100);
 
   // listen to open-images events dispatched from map popups
@@ -106,6 +122,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   unsubscribeFromSignalements();
+  unsubscribeFromProblemes();
   destroyMap();
   window.removeEventListener('show-signalement-images', () => {});
 });
@@ -114,6 +131,11 @@ onUnmounted(() => {
 watch(filteredSignalements, (newSignalements) => {
   displaySignalements(newSignalements);
 });
+
+watch(problemes, (newProblemes) => {
+  console.log(`🔧 Watcher problemes déclenché avec ${newProblemes.length} problèmes BRUTS`);
+  displayProblemes(newProblemes);
+}, { immediate: true });
 
 // Handlers
 function handleFiltersChanged() {
